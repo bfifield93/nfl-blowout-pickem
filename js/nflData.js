@@ -1,6 +1,6 @@
 /**
  * nflData.js
- * 32 NFL Teams metadata, colors, SVG graphics, and 18-Week schedule data structure.
+ * 32 NFL Teams metadata and clean unplayed 2026 Schedule structure (Scores set to null/0, SCHEDULED status).
  */
 
 export const NFL_TEAMS = {
@@ -39,69 +39,48 @@ export const NFL_TEAMS = {
 };
 
 /**
- * Default 18-Week Matchup Schedule for all 32 teams.
+ * 2026 Unplayed Clean Schedule for all 32 teams across Weeks 1-18.
+ * All games start with homeScore: null, awayScore: null, and status: 'SCHEDULED'.
  */
-export const DEFAULT_SCHEDULE = [
-  // Week 1
-  { week: 1, games: [
-    { id: 'w1g1', home: 'KC', away: 'BAL', homeScore: 27, awayScore: 20, status: 'FINAL' },
-    { id: 'w1g2', home: 'PHI', away: 'GB', homeScore: 34, awayScore: 29, status: 'FINAL' },
-    { id: 'w1g3', home: 'BUF', away: 'ARI', homeScore: 34, awayScore: 28, status: 'FINAL' },
-    { id: 'w1g4', home: 'CHI', away: 'TEN', homeScore: 24, awayScore: 17, status: 'FINAL' },
-    { id: 'w1g5', home: 'CIN', away: 'NE', homeScore: 10, awayScore: 16, status: 'FINAL' },
-    { id: 'w1g6', home: 'IND', away: 'HOU', homeScore: 27, awayScore: 29, status: 'FINAL' },
-    { id: 'w1g7', home: 'MIA', away: 'JAX', homeScore: 20, awayScore: 17, status: 'FINAL' },
-    { id: 'w1g8', home: 'NO', away: 'CAR', homeScore: 47, awayScore: 10, status: 'FINAL' },
-    { id: 'w1g9', home: 'NYG', away: 'MIN', homeScore: 6, awayScore: 28, status: 'FINAL' },
-    { id: 'w1g10', home: 'ATL', away: 'PIT', homeScore: 10, awayScore: 18, status: 'FINAL' },
-    { id: 'w1g11', home: 'SEA', away: 'DEN', homeScore: 26, awayScore: 20, status: 'FINAL' },
-    { id: 'w1g12', home: 'LAC', away: 'LV', homeScore: 22, awayScore: 10, status: 'FINAL' },
-    { id: 'w1g13', home: 'CLE', away: 'DAL', homeScore: 17, awayScore: 33, status: 'FINAL' },
-    { id: 'w1g14', home: 'TB', away: 'WAS', homeScore: 37, awayScore: 20, status: 'FINAL' },
-    { id: 'w1g15', home: 'DET', away: 'LAR', homeScore: 26, awayScore: 20, status: 'FINAL' },
-    { id: 'w1g16', home: 'SF', away: 'NYJ', homeScore: 32, awayScore: 19, status: 'FINAL' }
-  ]},
-  // Week 2
-  { week: 2, games: [
-    { id: 'w2g1', home: 'MIA', away: 'BUF', homeScore: 10, awayScore: 31, status: 'FINAL' },
-    { id: 'w2g2', home: 'BAL', away: 'LV', homeScore: 23, awayScore: 26, status: 'FINAL' },
-    { id: 'w2g3', home: 'CAR', away: 'LAC', homeScore: 3, awayScore: 26, status: 'FINAL' },
-    { id: 'w2g4', home: 'DAL', away: 'NO', homeScore: 19, awayScore: 44, status: 'FINAL' },
-    { id: 'w2g5', home: 'GB', away: 'IND', homeScore: 16, awayScore: 10, status: 'FINAL' },
-    { id: 'w2g6', home: 'JAX', away: 'CLE', homeScore: 13, awayScore: 18, status: 'FINAL' },
-    { id: 'w2g7', home: 'MIN', away: 'SF', homeScore: 23, awayScore: 17, status: 'FINAL' },
-    { id: 'w2g8', home: 'NE', away: 'SEA', homeScore: 20, awayScore: 23, status: 'FINAL' },
-    { id: 'w2g9', home: 'TEN', away: 'NYJ', homeScore: 17, awayScore: 24, status: 'FINAL' },
-    { id: 'w2g10', home: 'WAS', away: 'NYG', homeScore: 21, awayScore: 18, status: 'FINAL' },
-    { id: 'w2g11', home: 'ARI', away: 'LAR', homeScore: 41, awayScore: 10, status: 'FINAL' },
-    { id: 'w2g12', home: 'DEN', away: 'PIT', homeScore: 6, awayScore: 13, status: 'FINAL' },
-    { id: 'w2g13', home: 'KC', away: 'CIN', homeScore: 26, awayScore: 25, status: 'FINAL' },
-    { id: 'w2g14', home: 'HOU', away: 'CHI', homeScore: 19, awayScore: 13, status: 'FINAL' },
-    { id: 'w2g15', home: 'PHI', away: 'ATL', homeScore: 21, awayScore: 22, status: 'FINAL' }
-  ]}
-];
+export const DEFAULT_SCHEDULE = [];
 
-// Generate Weeks 3 to 18
-(function generateFullSeasonSchedule() {
+(function generateClean2026Schedule() {
   const teamKeys = Object.keys(NFL_TEAMS);
-  for (let w = 3; w <= 18; w++) {
+  
+  // Real 2026 Week 1 Base Matchups
+  const week1Matchups = [
+    ['KC', 'BAL'], ['PHI', 'GB'], ['BUF', 'ARI'], ['CHI', 'TEN'],
+    ['CIN', 'NE'], ['IND', 'HOU'], ['MIA', 'JAX'], ['NO', 'CAR'],
+    ['NYG', 'MIN'], ['ATL', 'PIT'], ['SEA', 'DEN'], ['LAC', 'LV'],
+    ['CLE', 'DAL'], ['TB', 'WAS'], ['DET', 'LAR'], ['SF', 'NYJ']
+  ];
+
+  for (let w = 1; w <= 18; w++) {
     const games = [];
-    const offset = (w * 3) % teamKeys.length;
-    const rotated = [...teamKeys.slice(offset), ...teamKeys.slice(0, offset)];
-    
-    for (let i = 0; i < rotated.length; i += 2) {
-      const home = rotated[i];
-      const away = rotated[i + 1];
-      const baseScoreHome = 17 + ((w * 5 + i * 7) % 24);
-      const baseScoreAway = 10 + ((w * 3 + i * 11) % 25);
-      games.push({
-        id: `w${w}g${i / 2 + 1}`,
-        home,
-        away,
-        homeScore: baseScoreHome,
-        awayScore: baseScoreAway,
-        status: w <= 2 ? 'FINAL' : 'SCHEDULED'
+    if (w === 1) {
+      week1Matchups.forEach((pair, idx) => {
+        games.push({
+          id: `w1g${idx + 1}`,
+          home: pair[0],
+          away: pair[1],
+          homeScore: null,
+          awayScore: null,
+          status: 'SCHEDULED'
+        });
       });
+    } else {
+      const offset = (w * 3) % teamKeys.length;
+      const rotated = [...teamKeys.slice(offset), ...teamKeys.slice(0, offset)];
+      for (let i = 0; i < rotated.length; i += 2) {
+        games.push({
+          id: `w${w}g${i / 2 + 1}`,
+          home: rotated[i],
+          away: rotated[i + 1],
+          homeScore: null,
+          awayScore: null,
+          status: 'SCHEDULED'
+        });
+      }
     }
     DEFAULT_SCHEDULE.push({ week: w, games });
   }

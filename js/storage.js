@@ -14,39 +14,15 @@ const DEFAULT_LEAGUE_DATA = {
   players: [
     {
       id: 'p1',
-      name: 'Alex (You)',
+      name: 'Player 1 (You)',
       avatar: '👑',
-      picks: {
-        week1: { winnerTeamId: 'NO', loserTeamId: 'CAR' }, // NO beat CAR 47-10 (+37 win & +37 loss)
-        week2: { winnerTeamId: 'ARI', loserTeamId: 'DAL' } // ARI beat LAR 41-10, DAL lost to NO 44-19
-      }
+      picks: {}
     },
     {
       id: 'p2',
-      name: 'Jordan',
+      name: 'Friend 1',
       avatar: '⚡',
-      picks: {
-        week1: { winnerTeamId: 'MIN', loserTeamId: 'NYG' }, // MIN beat NYG 28-6 (+22 win & +22 loss)
-        week2: { winnerTeamId: 'BUF', loserTeamId: 'CAR' }
-      }
-    },
-    {
-      id: 'p3',
-      name: 'Sam',
-      avatar: '🔥',
-      picks: {
-        week1: { winnerTeamId: 'TB', loserTeamId: 'WAS' },
-        week2: { winnerTeamId: 'LAC', loserTeamId: 'MIA' }
-      }
-    },
-    {
-      id: 'p4',
-      name: 'Taylor',
-      avatar: '🎯',
-      picks: {
-        week1: { winnerTeamId: 'DAL', loserTeamId: 'CLE' },
-        week2: { winnerTeamId: 'NO', loserTeamId: 'LAR' }
-      }
+      picks: {}
     }
   ],
   schedule: DEFAULT_SCHEDULE
@@ -107,6 +83,7 @@ export function importLeagueJson(jsonText) {
 }
 
 export function resetToDefaultLeague() {
-  saveLeagueData(DEFAULT_LEAGUE_DATA);
-  return DEFAULT_LEAGUE_DATA;
+  const freshData = JSON.parse(JSON.stringify(DEFAULT_LEAGUE_DATA));
+  saveLeagueData(freshData);
+  return freshData;
 }
