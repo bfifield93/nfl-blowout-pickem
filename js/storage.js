@@ -1,0 +1,112 @@
+/**
+ * storage.js
+ * Persistence engine using LocalStorage & JSON Export/Import.
+ */
+
+import { DEFAULT_SCHEDULE } from './nflData.js';
+
+const STORAGE_KEY_LEAGUE = 'nfl_blowout_pickem_league_v1';
+
+const DEFAULT_LEAGUE_DATA = {
+  leagueName: 'Blowout Champions League 2026',
+  currentWeek: 1,
+  activePlayerId: 'p1',
+  players: [
+    {
+      id: 'p1',
+      name: 'Alex (You)',
+      avatar: '👑',
+      picks: {
+        week1: { winnerTeamId: 'NO', loserTeamId: 'CAR' }, // NO beat CAR 47-10 (+37 win & +37 loss)
+        week2: { winnerTeamId: 'ARI', loserTeamId: 'DAL' } // ARI beat LAR 41-10, DAL lost to NO 44-19
+      }
+    },
+    {
+      id: 'p2',
+      name: 'Jordan',
+      avatar: '⚡',
+      picks: {
+        week1: { winnerTeamId: 'MIN', loserTeamId: 'NYG' }, // MIN beat NYG 28-6 (+22 win & +22 loss)
+        week2: { winnerTeamId: 'BUF', loserTeamId: 'CAR' }
+      }
+    },
+    {
+      id: 'p3',
+      name: 'Sam',
+      avatar: '🔥',
+      picks: {
+        week1: { winnerTeamId: 'TB', loserTeamId: 'WAS' },
+        week2: { winnerTeamId: 'LAC', loserTeamId: 'MIA' }
+      }
+    },
+    {
+      id: 'p4',
+      name: 'Taylor',
+      avatar: '🎯',
+      picks: {
+        week1: { winnerTeamId: 'DAL', loserTeamId: 'CLE' },
+        week2: { winnerTeamId: 'NO', loserTeamId: 'LAR' }
+      }
+    }
+  ],
+  schedule: DEFAULT_SCHEDULE
+};
+
+export function loadLeagueData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LEAGUE);
+    if (!raw) {
+      saveLeagueData(DEFAULT_LEAGUE_DATA);
+      return DEFAULT_LEAGUE_DATA;
+    }
+    const parsed = JSON.parse(raw);
+
+    // Merge default schedule if missing weeks
+    if (!parsed.schedule || parsed.schedule.length === 0) {
+      parsed.schedule = DEFAULT_SCHEDULE;
+    }
+    return parsed;
+  } catch (err) {
+    console.error('Error loading league data, reverting to defaults:', err);
+    return DEFAULT_LEAGUE_DATA;
+  }
+}
+
+export function saveLeagueData(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY_LEAGUE, JSON.stringify(data));
+  } catch (err) {
+    console.error('Error saving league data:', err);
+  }
+}
+
+export function exportLeagueJson(data) {
+  const jsonStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${data.leagueName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_data.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function importLeagueJson(jsonText) {
+  try {
+    const parsed = JSON.parse(jsonText);
+    if (!parsed.players || !Array.isArray(parsed.players)) {
+      throw new Error('Invalid league file format: missing players list.');
+    }
+    saveLeagueData(parsed);
+    return { success: true, data: parsed };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export function resetToDefaultLeague() {
+  saveLeagueData(DEFAULT_LEAGUE_DATA);
+  return DEFAULT_LEAGUE_DATA;
+}

@@ -1,0 +1,108 @@
+/**
+ * nflData.js
+ * 32 NFL Teams metadata, colors, SVG graphics, and 18-Week schedule data structure.
+ */
+
+export const NFL_TEAMS = {
+  ARI: { id: 'ARI', name: 'Cardinals', city: 'Arizona', conference: 'NFC', division: 'West', primaryColor: '#97233F', secondaryColor: '#FFB612', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#97233F" d="M10,35 Q40,10 90,20 Q85,55 55,80 Q25,90 10,35 Z"/><path fill="#FFB612" d="M45,35 Q65,25 80,30 Q70,45 55,40 Z"/><circle cx="68" cy="32" r="4" fill="#FFF"/><circle cx="69" cy="32" r="2" fill="#000"/></svg>` },
+  ATL: { id: 'ATL', name: 'Falcons', city: 'Atlanta', conference: 'NFC', division: 'South', primaryColor: '#A71930', secondaryColor: '#000000', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#A71930" d="M15,20 L85,20 L85,45 L50,45 L75,70 L60,85 L35,60 L35,85 L15,85 Z"/><path fill="#000" d="M40,30 L75,30 L60,45 Z"/></svg>` },
+  BAL: { id: 'BAL', name: 'Ravens', city: 'Baltimore', conference: 'AFC', division: 'North', primaryColor: '#241773', secondaryColor: '#9E7C0C', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#241773" d="M15,25 Q50,15 85,30 Q75,75 40,85 Q15,65 15,25 Z"/><path fill="#9E7C0C" d="M30,35 L70,40 L55,55 Z"/><circle cx="65" cy="35" r="4" fill="#D00"/><circle cx="66" cy="35" r="2" fill="#FFF"/></svg>` },
+  BUF: { id: 'BUF', name: 'Bills', city: 'Buffalo', conference: 'AFC', division: 'East', primaryColor: '#00338D', secondaryColor: '#C60C30', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#00338D" d="M10,45 Q30,15 75,25 Q90,45 80,70 Q50,85 10,45 Z"/><path fill="#C60C30" d="M15,48 L80,38 L75,44 L15,54 Z"/></svg>` },
+  CAR: { id: 'CAR', name: 'Panthers', city: 'Carolina', conference: 'NFC', division: 'South', primaryColor: '#0085CA', secondaryColor: '#101820', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#0085CA" d="M15,30 Q50,10 85,30 Q80,75 45,85 Q15,70 15,30 Z"/><path fill="#101820" d="M25,40 Q55,25 75,40 Q65,60 35,60 Z"/><circle cx="60" cy="35" r="3" fill="#0085CA"/></svg>` },
+  CHI: { id: 'CHI', name: 'Bears', city: 'Chicago', conference: 'NFC', division: 'North', primaryColor: '#0B162A', secondaryColor: '#C83803', logoSvg: `<svg viewBox="0 0 100 100"><path fill="none" stroke="#C83803" stroke-width="14" d="M75,25 A35,35 0 1,0 75,75 L50,75 L50,60 L70,60 A20,20 0 1,1 70,40 Z"/><path fill="#0B162A" d="M45,40 L70,40 L70,60 L45,60 Z"/></svg>` },
+  CIN: { id: 'CIN', name: 'Bengals', city: 'Cincinnati', conference: 'AFC', division: 'North', primaryColor: '#FB4F14', secondaryColor: '#000000', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#FB4F14" d="M20,20 L75,20 Q85,40 70,55 Q85,70 75,85 L20,85 Q35,50 20,20 Z"/><path fill="#000" d="M30,30 L55,30 L35,45 Z M35,60 L60,70 L30,75 Z"/></svg>` },
+  CLE: { id: 'CLE', name: 'Browns', city: 'Cleveland', conference: 'AFC', division: 'North', primaryColor: '#311D00', secondaryColor: '#FF3C00', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#FF3C00" d="M20,20 Q80,10 85,50 Q80,85 20,80 Z"/><path fill="#311D00" d="M25,48 L80,48 L80,54 L25,54 Z"/><path fill="#FFF" d="M40,30 L40,70 L48,70 L48,30 Z"/></svg>` },
+  DAL: { id: 'DAL', name: 'Cowboys', city: 'Dallas', conference: 'NFC', division: 'East', primaryColor: '#003594', secondaryColor: '#041E42', logoSvg: `<svg viewBox="0 0 100 100"><polygon fill="#003594" points="50,10 63,38 93,38 69,56 78,85 50,67 22,85 31,56 7,38 37,38"/></svg>` },
+  DEN: { id: 'DEN', name: 'Broncos', city: 'Denver', conference: 'AFC', division: 'West', primaryColor: '#FB4F14', secondaryColor: '#002244', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#002244" d="M15,30 Q50,15 85,25 Q80,75 45,85 Q15,65 15,30 Z"/><path fill="#FB4F14" d="M30,30 Q65,25 75,45 Q55,60 30,50 Z"/><circle cx="65" cy="35" r="3" fill="#FFF"/></svg>` },
+  DET: { id: 'DET', name: 'Lions', city: 'Detroit', conference: 'NFC', division: 'North', primaryColor: '#0076B6', secondaryColor: '#B0B7BC', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#0076B6" d="M15,40 Q35,15 80,20 Q90,50 70,75 Q40,90 15,70 Z"/><path fill="#B0B7BC" d="M30,35 Q60,30 70,50 L45,55 Z"/></svg>` },
+  GB:  { id: 'GB',  name: 'Packers', city: 'Green Bay', conference: 'NFC', division: 'North', primaryColor: '#203731', secondaryColor: '#FFB612', logoSvg: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="42" ry="32" fill="#FFB612"/><ellipse cx="50" cy="50" rx="36" ry="26" fill="#203731"/><text x="50" y="63" font-size="38" font-family="Arial Black, sans-serif" font-weight="900" fill="#FFF" text-anchor="middle">G</text></svg>` },
+  HOU: { id: 'HOU', name: 'Texans', city: 'Houston', conference: 'AFC', division: 'South', primaryColor: '#03202F', secondaryColor: '#A71930', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#03202F" d="M15,20 L50,45 L85,20 L75,75 L50,85 L25,75 Z"/><path fill="#A71930" d="M50,45 L85,20 L75,75 Z"/><polygon fill="#FFF" points="35,32 40,42 48,42 42,48 44,56 35,50 26,56 28,48 22,42 30,42"/></svg>` },
+  IND: { id: 'IND', name: 'Colts', city: 'Indianapolis', conference: 'AFC', division: 'South', primaryColor: '#002C5F', secondaryColor: '#A2AAAD', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#002C5F" d="M25,20 Q50,10 75,20 L75,40 Q60,35 50,55 Q40,35 25,40 Z M25,60 Q35,75 50,75 Q65,75 75,60 L75,80 Q50,90 25,80 Z"/></svg>` },
+  JAX: { id: 'JAX', name: 'Jaguars', city: 'Jacksonville', conference: 'AFC', division: 'South', primaryColor: '#006778', secondaryColor: '#D7A22A', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#006778" d="M15,35 Q50,15 85,25 Q85,65 50,85 Q20,75 15,35 Z"/><path fill="#D7A22A" d="M30,30 Q65,25 75,45 Q55,60 30,55 Z"/><circle cx="65" cy="35" r="3" fill="#000"/></svg>` },
+  KC:  { id: 'KC',  name: 'Chiefs', city: 'Kansas City', conference: 'AFC', division: 'West', primaryColor: '#E31837', secondaryColor: '#FFB81C', logoSvg: `<svg viewBox="0 0 100 100"><polygon fill="#FFF" stroke="#E31837" stroke-width="4" points="15,40 30,15 70,15 85,40 70,85 30,85"/><text x="50" y="62" font-size="34" font-family="Arial Black, sans-serif" font-weight="900" fill="#E31837" text-anchor="middle">KC</text></svg>` },
+  LV:  { id: 'LV',  name: 'Raiders', city: 'Las Vegas', conference: 'AFC', division: 'West', primaryColor: '#000000', secondaryColor: '#A5ACAF', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#A5ACAF" d="M15,15 L85,15 L85,50 Q85,85 50,95 Q15,85 15,50 Z"/><path fill="#000" d="M20,20 L80,20 L80,48 Q80,80 50,88 Q20,80 20,48 Z"/><polygon fill="#FFF" points="35,35 65,35 50,70"/></svg>` },
+  LAC: { id: 'LAC', name: 'Chargers', city: 'LA Chargers', conference: 'AFC', division: 'West', primaryColor: '#0080C6', secondaryColor: '#FFC20E', logoSvg: `<svg viewBox="0 0 100 100"><path fill="none" stroke="#FFC20E" stroke-width="12" stroke-linecap="round" d="M15,35 Q45,20 55,45 Q65,70 85,55"/><path fill="none" stroke="#0080C6" stroke-width="6" stroke-linecap="round" d="M15,35 Q45,20 55,45 Q65,70 85,55"/></svg>` },
+  LAR: { id: 'LAR', name: 'Rams', city: 'LA Rams', conference: 'NFC', division: 'West', primaryColor: '#003594', secondaryColor: '#FFA300', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#003594" d="M15,20 L60,20 Q85,20 85,45 Q85,65 60,65 L40,65 L70,90 L45,90 L20,65 L15,65 Z"/><path fill="#FFA300" d="M35,32 L60,32 Q70,32 70,42 Q70,52 60,52 L35,52 Z"/></svg>` },
+  MIA: { id: 'MIA', name: 'Dolphins', city: 'Miami', conference: 'AFC', division: 'East', primaryColor: '#008E97', secondaryColor: '#FC4C02', logoSvg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="#FC4C02"/><path fill="#008E97" d="M20,55 Q50,20 80,45 Q65,75 30,70 Z"/><circle cx="65" cy="38" r="3" fill="#FFF"/></svg>` },
+  MIN: { id: 'MIN', name: 'Vikings', city: 'Minnesota', conference: 'NFC', division: 'North', primaryColor: '#4F2683', secondaryColor: '#FFC62F', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#4F2683" d="M15,25 Q50,15 85,25 Q80,75 50,85 Q15,70 15,25 Z"/><path fill="#FFC62F" d="M25,35 Q60,30 75,50 L40,75 Z"/></svg>` },
+  NE:  { id: 'NE',  name: 'Patriots', city: 'New England', conference: 'AFC', division: 'East', primaryColor: '#002244', secondaryColor: '#C60C30', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#002244" d="M15,25 L85,25 L75,75 L50,85 L25,75 Z"/><path fill="#C60C30" d="M35,25 L85,25 L65,45 Z"/><polygon fill="#FFF" points="30,40 34,48 42,48 36,54 38,62 30,56 22,62 24,54 18,48 26,48"/></svg>` },
+  NO:  { id: 'NO',  name: 'Saints', city: 'New Orleans', conference: 'NFC', division: 'South', primaryColor: '#D3BC8D', secondaryColor: '#101820', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#D3BC8D" d="M50,10 C40,30 20,35 20,50 C20,65 35,65 35,80 L65,80 C65,65 80,65 80,50 C80,35 60,30 50,10 Z"/><path fill="#101820" d="M45,45 L55,45 L55,75 L45,75 Z M30,55 L70,55 L70,63 L30,63 Z"/></svg>` },
+  NYG: { id: 'NYG', name: 'Giants', city: 'NY Giants', conference: 'NFC', division: 'East', primaryColor: '#0B2265', secondaryColor: '#A71930', logoSvg: `<svg viewBox="0 0 100 100"><text x="50" y="70" font-size="52" font-family="Arial Black, sans-serif" font-weight="900" font-style="italic" fill="#0B2265" text-anchor="middle">ny</text></svg>` },
+  NYJ: { id: 'NYJ', name: 'Jets', city: 'NY Jets', conference: 'AFC', division: 'East', primaryColor: '#125740', secondaryColor: '#FFFFFF', logoSvg: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="44" ry="30" fill="#125740"/><text x="50" y="60" font-size="28" font-family="Arial Black, sans-serif" font-weight="900" fill="#FFF" text-anchor="middle">JETS</text></svg>` },
+  PHI: { id: 'PHI', name: 'Eagles', city: 'Philadelphia', conference: 'NFC', division: 'East', primaryColor: '#004C54', secondaryColor: '#A5ACAF', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#004C54" d="M85,35 Q40,15 15,45 Q35,80 80,70 Q60,55 85,35 Z"/><circle cx="35" cy="40" r="3" fill="#FFF"/></svg>` },
+  PIT: { id: 'PIT', name: 'Steelers', city: 'Pittsburgh', conference: 'AFC', division: 'North', primaryColor: '#FFB81C', secondaryColor: '#101820', logoSvg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FFF" stroke="#101820" stroke-width="4"/><polygon fill="#C60C30" points="50,18 58,32 50,46 42,32"/><polygon fill="#FFB81C" points="68,36 76,50 68,64 60,50"/><polygon fill="#0076B6" points="50,54 58,68 50,82 42,68"/></svg>` },
+  SF:  { id: 'SF',  name: '49ers', city: 'San Francisco', conference: 'NFC', division: 'West', primaryColor: '#AA0000', secondaryColor: '#B3995D', logoSvg: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="44" ry="30" fill="#AA0000" stroke="#B3995D" stroke-width="5"/><text x="50" y="62" font-size="34" font-family="Arial Black, sans-serif" font-weight="900" fill="#B3995D" text-anchor="middle">SF</text></svg>` },
+  SEA: { id: 'SEA', name: 'Seahawks', city: 'Seattle', conference: 'NFC', division: 'West', primaryColor: '#002244', secondaryColor: '#69BE28', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#002244" d="M15,35 Q50,15 85,25 Q75,70 45,80 Q15,65 15,35 Z"/><path fill="#69BE28" d="M25,40 Q65,25 75,45 Q55,55 30,50 Z"/><circle cx="65" cy="35" r="3" fill="#FFF"/></svg>` },
+  TB:  { id: 'TB',  name: 'Buccaneers', city: 'Tampa Bay', conference: 'NFC', division: 'South', primaryColor: '#D50A0A', secondaryColor: '#34302B', logoSvg: `<svg viewBox="0 0 100 100"><path fill="#D50A0A" d="M20,20 L80,20 L80,60 L50,85 L20,60 Z"/><path fill="#34302B" d="M35,30 L65,30 L50,65 Z"/><circle cx="50" cy="45" r="5" fill="#FFF"/></svg>` },
+  TEN: { id: 'TEN', name: 'Titans', city: 'Tennessee', conference: 'AFC', division: 'South', primaryColor: '#0C2340', secondaryColor: '#4B92DB', logoSvg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="#4B92DB"/><circle cx="50" cy="50" rx="30" ry="30" fill="#0C2340"/><polygon fill="#C60C30" points="50,25 55,38 68,38 58,46 62,59 50,51 38,59 42,46 32,38 45,38"/></svg>` },
+  WAS: { id: 'WAS', name: 'Commanders', city: 'Washington', conference: 'NFC', division: 'East', primaryColor: '#5A1414', secondaryColor: '#FFB612', logoSvg: `<svg viewBox="0 0 100 100"><rect x="15" y="15" width="70" height="70" rx="15" fill="#5A1414"/><text x="50" y="68" font-size="50" font-family="Arial Black, sans-serif" font-weight="900" fill="#FFB612" text-anchor="middle">W</text></svg>` }
+};
+
+/**
+ * Default 18-Week Matchup Schedule for all 32 teams.
+ */
+export const DEFAULT_SCHEDULE = [
+  // Week 1
+  { week: 1, games: [
+    { id: 'w1g1', home: 'KC', away: 'BAL', homeScore: 27, awayScore: 20, status: 'FINAL' },
+    { id: 'w1g2', home: 'PHI', away: 'GB', homeScore: 34, awayScore: 29, status: 'FINAL' },
+    { id: 'w1g3', home: 'BUF', away: 'ARI', homeScore: 34, awayScore: 28, status: 'FINAL' },
+    { id: 'w1g4', home: 'CHI', away: 'TEN', homeScore: 24, awayScore: 17, status: 'FINAL' },
+    { id: 'w1g5', home: 'CIN', away: 'NE', homeScore: 10, awayScore: 16, status: 'FINAL' },
+    { id: 'w1g6', home: 'IND', away: 'HOU', homeScore: 27, awayScore: 29, status: 'FINAL' },
+    { id: 'w1g7', home: 'MIA', away: 'JAX', homeScore: 20, awayScore: 17, status: 'FINAL' },
+    { id: 'w1g8', home: 'NO', away: 'CAR', homeScore: 47, awayScore: 10, status: 'FINAL' },
+    { id: 'w1g9', home: 'NYG', away: 'MIN', homeScore: 6, awayScore: 28, status: 'FINAL' },
+    { id: 'w1g10', home: 'ATL', away: 'PIT', homeScore: 10, awayScore: 18, status: 'FINAL' },
+    { id: 'w1g11', home: 'SEA', away: 'DEN', homeScore: 26, awayScore: 20, status: 'FINAL' },
+    { id: 'w1g12', home: 'LAC', away: 'LV', homeScore: 22, awayScore: 10, status: 'FINAL' },
+    { id: 'w1g13', home: 'CLE', away: 'DAL', homeScore: 17, awayScore: 33, status: 'FINAL' },
+    { id: 'w1g14', home: 'TB', away: 'WAS', homeScore: 37, awayScore: 20, status: 'FINAL' },
+    { id: 'w1g15', home: 'DET', away: 'LAR', homeScore: 26, awayScore: 20, status: 'FINAL' },
+    { id: 'w1g16', home: 'SF', away: 'NYJ', homeScore: 32, awayScore: 19, status: 'FINAL' }
+  ]},
+  // Week 2
+  { week: 2, games: [
+    { id: 'w2g1', home: 'MIA', away: 'BUF', homeScore: 10, awayScore: 31, status: 'FINAL' },
+    { id: 'w2g2', home: 'BAL', away: 'LV', homeScore: 23, awayScore: 26, status: 'FINAL' },
+    { id: 'w2g3', home: 'CAR', away: 'LAC', homeScore: 3, awayScore: 26, status: 'FINAL' },
+    { id: 'w2g4', home: 'DAL', away: 'NO', homeScore: 19, awayScore: 44, status: 'FINAL' },
+    { id: 'w2g5', home: 'GB', away: 'IND', homeScore: 16, awayScore: 10, status: 'FINAL' },
+    { id: 'w2g6', home: 'JAX', away: 'CLE', homeScore: 13, awayScore: 18, status: 'FINAL' },
+    { id: 'w2g7', home: 'MIN', away: 'SF', homeScore: 23, awayScore: 17, status: 'FINAL' },
+    { id: 'w2g8', home: 'NE', away: 'SEA', homeScore: 20, awayScore: 23, status: 'FINAL' },
+    { id: 'w2g9', home: 'TEN', away: 'NYJ', homeScore: 17, awayScore: 24, status: 'FINAL' },
+    { id: 'w2g10', home: 'WAS', away: 'NYG', homeScore: 21, awayScore: 18, status: 'FINAL' },
+    { id: 'w2g11', home: 'ARI', away: 'LAR', homeScore: 41, awayScore: 10, status: 'FINAL' },
+    { id: 'w2g12', home: 'DEN', away: 'PIT', homeScore: 6, awayScore: 13, status: 'FINAL' },
+    { id: 'w2g13', home: 'KC', away: 'CIN', homeScore: 26, awayScore: 25, status: 'FINAL' },
+    { id: 'w2g14', home: 'HOU', away: 'CHI', homeScore: 19, awayScore: 13, status: 'FINAL' },
+    { id: 'w2g15', home: 'PHI', away: 'ATL', homeScore: 21, awayScore: 22, status: 'FINAL' }
+  ]}
+];
+
+// Generate Weeks 3 to 18
+(function generateFullSeasonSchedule() {
+  const teamKeys = Object.keys(NFL_TEAMS);
+  for (let w = 3; w <= 18; w++) {
+    const games = [];
+    const offset = (w * 3) % teamKeys.length;
+    const rotated = [...teamKeys.slice(offset), ...teamKeys.slice(0, offset)];
+    
+    for (let i = 0; i < rotated.length; i += 2) {
+      const home = rotated[i];
+      const away = rotated[i + 1];
+      const baseScoreHome = 17 + ((w * 5 + i * 7) % 24);
+      const baseScoreAway = 10 + ((w * 3 + i * 11) % 25);
+      games.push({
+        id: `w${w}g${i / 2 + 1}`,
+        home,
+        away,
+        homeScore: baseScoreHome,
+        awayScore: baseScoreAway,
+        status: w <= 2 ? 'FINAL' : 'SCHEDULED'
+      });
+    }
+    DEFAULT_SCHEDULE.push({ week: w, games });
+  }
+})();

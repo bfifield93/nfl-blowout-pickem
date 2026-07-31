@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL Blowout Pick'em - Margin of Victory League</title>
+  <meta name="description" content="NFL Blowout of the Week Pick'em app. Pick blowout winners & losers, earn points for margins of victory, with strict single-use survivor rules!">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-icon">🏈</div>
+        <div>
+          <h1 class="brand-title">BLOWOUT PICK'EM</h1>
+          <div class="brand-subtitle">NFL MARGIN OF VICTORY LEAGUE</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Player Switcher -->
+        <div class="player-select-wrapper">
+          <span class="player-select-label">Active Player:</span>
+          <select id="playerDropdown" class="player-dropdown"></select>
+        </div>
+
+        <button id="btnAddPlayer" class="btn btn-secondary" title="Add a new player to the league">
+          <span>➕ Add Player</span>
+        </button>
+
+        <button id="btnRules" class="btn btn-secondary" title="View League Rules">
+          <span>📖 Rules</span>
+        </button>
+
+        <button id="btnLiveSync" class="btn btn-primary" style="background: linear-gradient(135deg, #06B6D4, #3B82F6); box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);" title="Sync Live Real 2026 NFL Scores & Schedule from ESPN">
+          <span>🌐 Live NFL Sync</span>
+        </button>
+
+        <button id="btnExportImport" class="btn btn-secondary" title="Export or Import League Data">
+          <span>💾 Sync / Data</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body Container -->
+  <main class="main-container">
+    
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tabPicks">🏈 Weekly Picks</button>
+      <button class="tab-btn" data-tab="tabStandings">🏆 Leaderboard & Standings</button>
+      <button class="tab-btn" data-tab="tabMatrix">📊 Used Teams Matrix</button>
+      <button class="tab-btn" data-tab="tabScores">⚙️ Score Manager / Sim</button>
+    </nav>
+
+    <!-- Tab 1: Weekly Picks & Matchups -->
+    <section id="tabPicks" class="tab-content active">
+      <!-- Week Selector Carousel -->
+      <div class="week-carousel-container">
+        <button id="btnPrevWeek" class="btn-icon">◀</button>
+        <div id="weekCarousel" class="week-carousel"></div>
+        <button id="btnNextWeek" class="btn-icon">▶</button>
+      </div>
+
+      <div class="picks-layout">
+        <!-- Matchups Column -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 id="weekTitle" style="font-size: 1.3rem; font-weight: 800;">Week 1 Matchups</h2>
+            <span id="weekStatusBadge" class="game-status-badge scheduled">SCHEDULED</span>
+          </div>
+          <div id="matchupsGrid" class="matchups-grid"></div>
+        </div>
+
+        <!-- Sidebar Current Picks Summary -->
+        <div>
+          <div class="picks-summary-card">
+            <div class="summary-title">
+              <span>Your Week Picks</span>
+              <span id="activePlayerBadge" style="font-size: 0.8rem; color: var(--color-green);">Alex</span>
+            </div>
+
+            <!-- Blowout Winner Pick Box -->
+            <div id="winnerSummaryBox" class="summary-pick-item">
+              <div>
+                <div class="pick-type-tag winner">BLOWOUT WINNER PICK</div>
+                <div id="winnerSummaryTeam" style="font-weight: 700; margin-top: 4px; font-size: 1.05rem;">None Selected</div>
+              </div>
+              <div id="winnerSummaryPts" class="summary-points-val">0 pts</div>
+            </div>
+
+            <!-- Blowout Loser Pick Box -->
+            <div id="loserSummaryBox" class="summary-pick-item">
+              <div>
+                <div class="pick-type-tag loser">BLOWOUT LOSER PICK</div>
+                <div id="loserSummaryTeam" style="font-weight: 700; margin-top: 4px; font-size: 1.05rem;">None Selected</div>
+              </div>
+              <div id="loserSummaryPts" class="summary-points-val">0 pts</div>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.9rem; color: var(--text-muted);">Est. Week Total:</span>
+              <span id="totalWeekPts" style="font-size: 1.5rem; font-weight: 900; color: var(--color-green);">0 PTS</span>
+            </div>
+
+            <button id="btnClearPicks" class="btn btn-secondary" style="width: 100%; margin-top: 16px; justify-content: center;">
+              🗑️ Clear Week Picks
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Leaderboard & Standings -->
+    <section id="tabStandings" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Season Leaderboard</h2>
+        <button id="btnShareLeaderboard" class="btn btn-secondary">📋 Copy Summary for Chat</button>
+      </div>
+
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">Rank</th>
+            <th>Player</th>
+            <th>Total Points</th>
+            <th>Correct Picks</th>
+            <th>Accuracy %</th>
+            <th>Max Blowout</th>
+          </tr>
+        </thead>
+        <tbody id="standingsTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Tab 3: Used Teams Matrix -->
+    <section id="tabMatrix" class="tab-content" style="display: none;">
+      <div class="matrix-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div>
+            <h2>Survivor Rule: Used Teams Matrix</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">
+              Each team can only be selected <strong>ONCE per season</strong> (whether picked to win or lose).
+            </p>
+          </div>
+          <select id="matrixPlayerSelect" class="player-dropdown" style="background: rgba(255,255,255,0.08); padding: 8px 14px; border-radius: var(--radius-md);"></select>
+        </div>
+
+        <div id="teamsGrid" class="teams-grid"></div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Score Manager & Simulator -->
+    <section id="tabScores" class="tab-content" style="display: none;">
+      <div class="matrix-container">
+        <h2>Game Score Manager & Simulator</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+          As commissioner, you can enter real NFL game scores for any week or simulate random results to test scoring.
+        </p>
+
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center;">
+          <label style="font-weight: 700;">Select Week to Edit:</label>
+          <select id="scoreWeekDropdown" class="player-dropdown" style="background: rgba(255,255,255,0.08); padding: 8px 14px; border-radius: var(--radius-md);"></select>
+          <button id="btnSimulateWeek" class="btn btn-primary">🎲 Simulate Week Scores</button>
+        </div>
+
+        <div id="scoreEditorGrid" class="matchups-grid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add Player Modal -->
+  <div id="modalAddPlayer" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Add New Player</h3>
+        <button class="close-modal btn-icon">✕</button>
+      </div>
+      <form id="formAddPlayer">
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px;">Player Name</label>
+          <input type="text" id="inputPlayerName" placeholder="e.g. Marcus" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px;">Choose Avatar Emoji</label>
+          <div style="display: flex; gap: 10px; font-size: 1.5rem;" id="avatarOptions">
+            <span class="avatar-opt" style="cursor: pointer;">🏈</span>
+            <span class="avatar-opt" style="cursor: pointer;">⚡</span>
+            <span class="avatar-opt" style="cursor: pointer;">🔥</span>
+            <span class="avatar-opt" style="cursor: pointer;">🎯</span>
+            <span class="avatar-opt" style="cursor: pointer;">🦁</span>
+            <span class="avatar-opt" style="cursor: pointer;">👑</span>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="close-modal btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Player</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Rules Modal -->
+  <div id="modalRules" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">📖 NFL Blowout Pick'em Rules</h3>
+        <button class="close-modal btn-icon">✕</button>
+      </div>
+      <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
+        <h4 style="color: var(--color-green); margin-bottom: 6px;">1. Blowout Winner Pick</h4>
+        <p style="margin-bottom: 14px;">Pick 1 team per week that will win by the largest margin. You get <strong>points equal to the Margin of Victory</strong> (Winner Score - Loser Score). If they lose, you get 0 points.</p>
+
+        <h4 style="color: var(--color-red); margin-bottom: 6px;">2. Blowout Loser Pick</h4>
+        <p style="margin-bottom: 14px;">Pick 1 team per week that will get blown out. You get <strong>points equal to the Margin of Defeat</strong> (Opponent Score - Your Team Score). If they win, you get 0 points.</p>
+
+        <h4 style="color: var(--color-gold); margin-bottom: 6px;">3. Strict Single-Use Survivor Rule</h4>
+        <p style="margin-bottom: 14px;">You can <strong>ONLY select each NFL team ONCE per season</strong>, regardless of whether you pick them as a Winner or a Loser. Once used in any week, they are locked/burnt for the rest of the year!</p>
+
+        <h4 style="color: var(--color-cyan); margin-bottom: 6px;">4. Season Champion</h4>
+        <p>The player with the highest total points at the end of Week 18 wins the championship!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export/Import Modal -->
+  <div id="modalExportImport" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">💾 Sync & League Data</h3>
+        <button class="close-modal btn-icon">✕</button>
+      </div>
+      <div>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
+          Share league state with friends or backup your picks file for GitHub Pages hosting.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+          <button id="btnExportFile" class="btn btn-primary">⬇️ Download League Data JSON</button>
+          
+          <label class="btn btn-secondary" style="justify-content: center; cursor: pointer;">
+            <span>⬆️ Upload / Import JSON File</span>
+            <input type="file" id="inputImportFile" accept=".json" style="display: none;">
+          </label>
+
+          <button id="btnResetLeague" class="btn btn-secondary" style="color: var(--color-red); border-color: rgba(239,68,68,0.3);">
+            ⚠️ Reset League to Defaults
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

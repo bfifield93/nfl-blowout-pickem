@@ -1,0 +1,40 @@
+name: Auto Update Real 2026 NFL Scores
+
+on:
+  schedule:
+    # Runs every Sunday and Monday during NFL season at 6:00 AM UTC and 11:00 PM UTC
+    - cron: '0 6,23 * * 0,1'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  update-scores:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Latest ESPN NFL Scores
+        run: |
+          node -e "
+          const fs = require('fs');
+          const https = require('https');
+
+          https.get('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=2026', (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+              fs.writeFileSync('./espn_live_scores.json', data);
+              console.log('Successfully saved real 2026 NFL score snapshot.');
+            });
+          }).on('error', err => console.error(err));
+          "
+
+      - name: Commit and Push Updated Scores
+        run: |
+          git config --global user.name "NFL Score Bot"
+          git config --global user.email "bot@github.com"
+          git add espn_live_scores.json
+          git status
+          git diff-index --quiet HEAD || git commit -m "Auto-update real 2026 NFL score snapshot"
+          git push
