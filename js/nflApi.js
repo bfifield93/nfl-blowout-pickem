@@ -67,26 +67,22 @@ export async function fetchLiveNflScores(weekNum = 1, year = 2026, seasonType = 
 
 /**
  * Merges live fetched games from ESPN API into the current schedule object.
+ * Replaces placeholder games with official real 2026 NFL matchups.
  */
 export function mergeLiveGamesIntoSchedule(schedule, weekNum, liveGames) {
   const weekData = schedule.find(w => w.week === weekNum);
   if (!weekData || !liveGames || liveGames.length === 0) return schedule;
 
-  // Replace or update games
-  liveGames.forEach(liveGame => {
-    const existing = weekData.games.find(g => 
-      (g.home === liveGame.home && g.away === liveGame.away) || g.id === liveGame.id
-    );
-
-    if (existing) {
-      existing.homeScore = liveGame.homeScore;
-      existing.awayScore = liveGame.awayScore;
-      existing.status = liveGame.status;
-      if (liveGame.clock) existing.clock = liveGame.clock;
-    } else {
-      weekData.games.push(liveGame);
-    }
-  });
+  // Replace week games with official real ESPN matchups
+  weekData.games = liveGames.map(g => ({
+    id: g.id,
+    home: g.home,
+    away: g.away,
+    homeScore: g.homeScore ?? 0,
+    awayScore: g.awayScore ?? 0,
+    status: g.status,
+    clock: g.clock || ''
+  }));
 
   return schedule;
 }

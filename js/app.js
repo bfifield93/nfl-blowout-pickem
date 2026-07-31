@@ -73,11 +73,25 @@ const elements = {
 };
 
 // Initialize Application
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   populateScoreWeekDropdown();
   renderAll();
+  
+  // Auto-sync official real 2026 NFL schedule from ESPN for current week
+  await autoSyncWeekSchedule(state.currentWeek);
 });
+
+async function autoSyncWeekSchedule(weekNum) {
+  const res = await fetchLiveNflScores(weekNum, 2026);
+  if (res.success && res.games.length > 0) {
+    state.league.schedule = mergeLiveGamesIntoSchedule(state.league.schedule, weekNum, res.games);
+    saveLeagueData(state.league);
+    renderMatchups();
+    renderPicksSummary();
+    renderScoreManager();
+  }
+}
 
 function getActivePlayer() {
   const activeId = state.league.activePlayerId;
@@ -437,31 +451,34 @@ function setupEventListeners() {
   });
 
   // Week Pill Selection
-  elements.weekCarousel.addEventListener('click', (e) => {
+  elements.weekCarousel.addEventListener('click', async (e) => {
     const pill = e.target.closest('.week-pill');
     if (pill) {
       state.currentWeek = parseInt(pill.dataset.week, 10);
       renderWeekCarousel();
       renderMatchups();
       renderPicksSummary();
+      await autoSyncWeekSchedule(state.currentWeek);
     }
   });
 
-  elements.btnPrevWeek.addEventListener('click', () => {
+  elements.btnPrevWeek.addEventListener('click', async () => {
     if (state.currentWeek > 1) {
       state.currentWeek--;
       renderWeekCarousel();
       renderMatchups();
       renderPicksSummary();
+      await autoSyncWeekSchedule(state.currentWeek);
     }
   });
 
-  elements.btnNextWeek.addEventListener('click', () => {
+  elements.btnNextWeek.addEventListener('click', async () => {
     if (state.currentWeek < 18) {
       state.currentWeek++;
       renderWeekCarousel();
       renderMatchups();
       renderPicksSummary();
+      await autoSyncWeekSchedule(state.currentWeek);
     }
   });
 
