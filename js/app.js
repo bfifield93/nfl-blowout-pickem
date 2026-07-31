@@ -51,11 +51,14 @@ const elements = {
   
   // Modals
   modalAddPlayer: document.getElementById('modalAddPlayer'),
+  modalManagePlayers: document.getElementById('modalManagePlayers'),
   modalRules: document.getElementById('modalRules'),
   modalExportImport: document.getElementById('modalExportImport'),
+  managePlayersList: document.getElementById('managePlayersList'),
   
   // Buttons
   btnAddPlayer: document.getElementById('btnAddPlayer'),
+  btnManagePlayers: document.getElementById('btnManagePlayers'),
   btnRules: document.getElementById('btnRules'),
   btnLiveSync: document.getElementById('btnLiveSync'),
   btnExportImport: document.getElementById('btnExportImport'),
@@ -640,10 +643,70 @@ function setupEventListeners() {
     }
   });
 
+/* -------------------------------------------------------------------------- */
+/* Manage Players List Renderer                                              */
+/* -------------------------------------------------------------------------- */
+
+function renderManagePlayersList() {
+  if (!elements.managePlayersList) return;
+
+  const players = state.league.players;
+  const activeId = state.league.activePlayerId;
+
+  elements.managePlayersList.innerHTML = players.map(p => {
+    const isActive = p.id === activeId;
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.4rem;">${p.avatar}</span>
+          <span style="font-weight: 700;">${p.name}</span>
+          ${isActive ? '<span style="font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,255,135,0.15); color: var(--color-green);">ACTIVE</span>' : ''}
+        </div>
+
+        <button class="btn btn-secondary btn-delete-player" data-player-id="${p.id}" style="color: var(--color-red); border-color: rgba(239,68,68,0.3); padding: 6px 12px; font-size: 0.8rem;">
+          🗑️ Remove
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
   // Modal Triggers
   elements.btnAddPlayer.addEventListener('click', () => elements.modalAddPlayer.classList.add('active'));
+  elements.btnManagePlayers.addEventListener('click', () => {
+    renderManagePlayersList();
+    elements.modalManagePlayers.classList.add('active');
+  });
   elements.btnRules.addEventListener('click', () => elements.modalRules.classList.add('active'));
   elements.btnExportImport.addEventListener('click', () => elements.modalExportImport.classList.add('active'));
+
+  // Delete Player Event Delegation
+  elements.managePlayersList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-delete-player');
+    if (!btn) return;
+
+    const playerId = btn.dataset.playerId;
+    const targetPlayer = state.league.players.find(p => p.id === playerId);
+
+    if (state.league.players.length <= 1) {
+      showToast('Cannot delete the last remaining player!', 'error');
+      return;
+    }
+
+    if (confirm(`Are you sure you want to remove "${targetPlayer?.name}" from the league?`)) {
+      state.league.players = state.league.players.filter(p => p.id !== playerId);
+      
+      // If deleted player was active, switch active to first player
+      if (state.league.activePlayerId === playerId) {
+        state.league.activePlayerId = state.league.players[0].id;
+      }
+
+      saveLeagueData(state.league);
+      renderManagePlayersList();
+      renderAll();
+      showToast(`Removed ${targetPlayer?.name} from the league.`);
+    }
+  });
 
   document.querySelectorAll('.close-modal').forEach(btn => {
     btn.addEventListener('click', () => {
