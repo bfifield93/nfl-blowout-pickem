@@ -1,6 +1,7 @@
 /**
  * nflData.js
- * 32 NFL Teams metadata and clean unplayed 2026 Schedule structure (Scores set to null/0, SCHEDULED status).
+ * 32 NFL Teams metadata.
+ * DEFAULT_SCHEDULE is initialized empty so ONLY official real ESPN 2026 matchups are displayed.
  */
 
 export const NFL_TEAMS = {
@@ -39,49 +40,10 @@ export const NFL_TEAMS = {
 };
 
 /**
- * 2026 Unplayed Clean Schedule for all 32 teams across Weeks 1-18.
- * All games start with homeScore: null, awayScore: null, and status: 'SCHEDULED'.
+ * DEFAULT_SCHEDULE contains empty game arrays for Weeks 1 to 18.
+ * Real matchups will be loaded exclusively from official ESPN API data.
  */
-export const DEFAULT_SCHEDULE = [];
-
-(function generateClean2026Schedule() {
-  const teamKeys = Object.keys(NFL_TEAMS);
-  
-  // Real 2026 Week 1 Base Matchups
-  const week1Matchups = [
-    ['KC', 'BAL'], ['PHI', 'GB'], ['BUF', 'ARI'], ['CHI', 'TEN'],
-    ['CIN', 'NE'], ['IND', 'HOU'], ['MIA', 'JAX'], ['NO', 'CAR'],
-    ['NYG', 'MIN'], ['ATL', 'PIT'], ['SEA', 'DEN'], ['LAC', 'LV'],
-    ['CLE', 'DAL'], ['TB', 'WAS'], ['DET', 'LAR'], ['SF', 'NYJ']
-  ];
-
-  for (let w = 1; w <= 18; w++) {
-    const games = [];
-    if (w === 1) {
-      week1Matchups.forEach((pair, idx) => {
-        games.push({
-          id: `w1g${idx + 1}`,
-          home: pair[0],
-          away: pair[1],
-          homeScore: null,
-          awayScore: null,
-          status: 'SCHEDULED'
-        });
-      });
-    } else {
-      const offset = (w * 3) % teamKeys.length;
-      const rotated = [...teamKeys.slice(offset), ...teamKeys.slice(0, offset)];
-      for (let i = 0; i < rotated.length; i += 2) {
-        games.push({
-          id: `w${w}g${i / 2 + 1}`,
-          home: rotated[i],
-          away: rotated[i + 1],
-          homeScore: null,
-          awayScore: null,
-          status: 'SCHEDULED'
-        });
-      }
-    }
-    DEFAULT_SCHEDULE.push({ week: w, games });
-  }
-})();
+export const DEFAULT_SCHEDULE = Array.from({ length: 18 }, (_, i) => ({
+  week: i + 1,
+  games: []
+}));

@@ -37,10 +37,12 @@ export function loadLeagueData() {
     }
     const parsed = JSON.parse(raw);
 
-    // Merge default schedule if missing weeks
-    if (!parsed.schedule || parsed.schedule.length === 0) {
+    // If existing cached schedule contains mock/placeholder games, reset schedule to clean ESPN 2026 structure
+    if (parsed.schedule && parsed.schedule.some(w => w.games.some(g => g.id.startsWith('w1g') || g.id.startsWith('w2g')))) {
       parsed.schedule = DEFAULT_SCHEDULE;
+      saveLeagueData(parsed);
     }
+
     return parsed;
   } catch (err) {
     console.error('Error loading league data, reverting to defaults:', err);

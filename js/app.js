@@ -175,8 +175,21 @@ function renderMatchups() {
 
   elements.weekTitle.textContent = `Week ${state.currentWeek} Matchups`;
   
+  if (!weekData.games || weekData.games.length === 0) {
+    elements.weekStatusBadge.textContent = 'FETCHING ESPN SCHEDULE';
+    elements.weekStatusBadge.className = 'game-status-badge scheduled';
+    elements.matchupsGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <div style="font-size: 2.2rem; margin-bottom: 12px; animation: pulse 1.5s infinite;">🌐</div>
+        <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;">Fetching Real 2026 NFL Schedule...</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Loading official matchups directly from ESPN API...</p>
+      </div>
+    `;
+    return;
+  }
+
   const allFinal = weekData.games.every(g => g.status === 'FINAL');
-  elements.weekStatusBadge.textContent = allFinal ? 'FINAL SCORES' : 'GAMES SCHEDULED';
+  elements.weekStatusBadge.textContent = allFinal ? 'FINAL SCORES' : 'SCHEDULED';
   elements.weekStatusBadge.className = `game-status-badge ${allFinal ? 'final' : 'scheduled'}`;
 
   const activePlayer = getActivePlayer();
@@ -184,8 +197,8 @@ function renderMatchups() {
   const usedTeamsMap = getPlayerUsedTeamsMap(activePlayer.picks);
 
   elements.matchupsGrid.innerHTML = weekData.games.map(game => {
-    const homeTeam = NFL_TEAMS[game.home] || { name: game.home, city: '' };
-    const awayTeam = NFL_TEAMS[game.away] || { name: game.away, city: '' };
+    const homeTeam = NFL_TEAMS[game.home] || { name: game.home, city: '', primaryColor: '#333', logoSvg: '' };
+    const awayTeam = NFL_TEAMS[game.away] || { name: game.away, city: '', primaryColor: '#333', logoSvg: '' };
 
     return `
       <div class="matchup-card" data-game-id="${game.id}">
