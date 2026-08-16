@@ -91,26 +91,17 @@
               <span id="activePlayerBadge" style="font-size: 0.8rem; color: var(--color-green);">Alex</span>
             </div>
 
-            <!-- Blowout Winner Pick Box -->
-            <div id="winnerSummaryBox" class="summary-pick-item">
+            <!-- Single Week Pick Box -->
+            <div id="singlePickSummaryBox" class="summary-pick-item">
               <div>
-                <div class="pick-type-tag winner">BLOWOUT WINNER PICK</div>
-                <div id="winnerSummaryTeam" style="font-weight: 700; margin-top: 4px; font-size: 1.05rem;">None Selected</div>
+                <div id="pickTypeTag" class="pick-type-tag winner">WEEK SELECTION</div>
+                <div id="singlePickTeam" style="font-weight: 700; margin-top: 4px; font-size: 1.05rem;">None Selected</div>
               </div>
-              <div id="winnerSummaryPts" class="summary-points-val">0 pts</div>
-            </div>
-
-            <!-- Blowout Loser Pick Box -->
-            <div id="loserSummaryBox" class="summary-pick-item">
-              <div>
-                <div class="pick-type-tag loser">BLOWOUT LOSER PICK</div>
-                <div id="loserSummaryTeam" style="font-weight: 700; margin-top: 4px; font-size: 1.05rem;">None Selected</div>
-              </div>
-              <div id="loserSummaryPts" class="summary-points-val">0 pts</div>
+              <div id="singlePickPts" class="summary-points-val">0 pts</div>
             </div>
 
             <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.9rem; color: var(--text-muted);">Est. Week Total:</span>
+              <span style="font-size: 0.9rem; color: var(--text-muted);">Week Total:</span>
               <span id="totalWeekPts" style="font-size: 1.5rem; font-weight: 900; color: var(--color-green);">0 PTS</span>
             </div>
 
@@ -236,16 +227,19 @@
         <button class="close-modal btn-icon">✕</button>
       </div>
       <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6;">
-        <h4 style="color: var(--color-green); margin-bottom: 6px;">1. Blowout Winner Pick</h4>
-        <p style="margin-bottom: 14px;">Pick 1 team per week that will win by the largest margin. You get <strong>points equal to the Margin of Victory</strong> (Winner Score - Loser Score). If they lose, you get 0 points.</p>
+        <h4 style="color: var(--color-cyan); margin-bottom: 6px;">1. Single Pick Per Week</h4>
+        <p style="margin-bottom: 14px;">Each player makes <strong>ONLY 1 pick total per week</strong>. You can choose a <strong>Blowout Winner Pick</strong> or a <strong>Blowout Loser Pick</strong>.</p>
 
-        <h4 style="color: var(--color-red); margin-bottom: 6px;">2. Blowout Loser Pick</h4>
-        <p style="margin-bottom: 14px;">Pick 1 team per week that will get blown out. You get <strong>points equal to the Margin of Defeat</strong> (Opponent Score - Your Team Score). If they win, you get 0 points.</p>
+        <h4 style="color: var(--color-green); margin-bottom: 6px;">2. Scoring Margin Points</h4>
+        <p style="margin-bottom: 14px;">
+          - <strong>Winner Pick</strong>: Earn points equal to the <strong>Margin of Victory</strong> ($Winner\ Score - Loser\ Score$) if your team wins (0 pts if they lose).<br>
+          - <strong>Loser Pick</strong>: Earn points equal to the <strong>Margin of Defeat</strong> ($Opponent\ Score - Your\ Team\ Score$) if your team loses (0 pts if they win).
+        </p>
 
-        <h4 style="color: var(--color-gold); margin-bottom: 6px;">3. Strict Single-Use Survivor Rule</h4>
-        <p style="margin-bottom: 14px;">You can <strong>ONLY select each NFL team ONCE per season</strong>, regardless of whether you pick them as a Winner or a Loser. Once used in any week, they are locked/burnt for the rest of the year!</p>
+        <h4 style="color: var(--color-gold); margin-bottom: 6px;">3. Single-Use Team Lock ("Survivor Rule")</h4>
+        <p style="margin-bottom: 14px;">You can <strong>ONLY select each NFL team ONCE per season</strong> (whether picked to win or lose). Once selected in any week, that team is burnt for the rest of the year!</p>
 
-        <h4 style="color: var(--color-cyan); margin-bottom: 6px;">4. Season Champion</h4>
+        <h4 style="color: var(--color-gold); margin-bottom: 6px;">4. Season Champion</h4>
         <p>The player with the highest total points at the end of Week 18 wins the championship!</p>
       </div>
     </div>

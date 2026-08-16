@@ -81,9 +81,9 @@ export function getPlayerUsedTeamsMap(playerPicks) {
 }
 
 /**
- * Checks if a specific team is already burnt/used by a player in any previous or future week.
+ * Checks if a specific team is already burnt/used by a player in any other week.
  */
-export function isTeamUsedByPlayer(playerPicks, teamId, currentWeek, currentPickType) {
+export function isTeamUsedByPlayer(playerPicks, teamId, currentWeek) {
   if (!playerPicks || !teamId) return false;
 
   const usedMap = getPlayerUsedTeamsMap(playerPicks);
@@ -91,13 +91,8 @@ export function isTeamUsedByPlayer(playerPicks, teamId, currentWeek, currentPick
 
   if (!entry) return false;
 
-  // If used in another week, it is definitely unavailable
-  if (entry.week !== currentWeek) return true;
-
-  // If used in the current week for the opposite pick type, it is also unavailable
-  if (entry.type !== currentPickType) return true;
-
-  return false;
+  // If used in another week, it is unavailable
+  return entry.week !== currentWeek;
 }
 
 /**

@@ -6,21 +6,16 @@ An NFL Pick'em web application centered around **Margin of Victory ("Blowout Sco
 
 ## 🏆 League Rules
 
-1. **Blowout Winner Pick**
-   - Select **1 winning team** each week predicted to achieve a blowout victory.
-   - **Scoring**: You earn points equal to the **Margin of Victory** ($Winner\ Score - Loser\ Score$).
-   - *Example*: If your team wins 35-10, you earn **+25 points**. If your team loses, you earn **0 points**.
+1. **Single Weekly Pick (Winner or Loser)**
+   - Select **ONLY 1 team per week**. That selection can be:
+     - **Blowout Winner Pick**: Earn points equal to the **Margin of Victory** ($Winner\ Score - Loser\ Score$) if your team wins (0 pts if they lose).
+     - **Blowout Loser Pick**: Earn points equal to the **Margin of Defeat** ($Opponent\ Score - Your\ Team\ Score$) if your team loses (0 pts if they win).
 
-2. **Blowout Loser Pick**
-   - Select **1 losing team** each week predicted to get blown out.
-   - **Scoring**: You earn points equal to the **Margin of Defeat** ($Opponent\ Score - Your\ Team\ Score$).
-   - *Example*: If your picked team loses 40-10, you earn **+30 points**. If your team wins, you earn **0 points**.
-
-3. **Strict Single-Use Team Constraint ("Survivor Rule")**
+2. **Strict Single-Use Team Constraint ("Survivor Rule")**
    - Each NFL team can only be selected **ONCE per season** by a player, regardless of whether you pick them as a Winner or a Loser!
    - Once a team is picked in any week, they are **locked/burnt** for the rest of the year.
 
-4. **Season Champion**
+3. **Season Champion**
    - The player with the highest cumulative total points across Weeks 1–18 wins the championship!
 
 ---

@@ -37,12 +37,10 @@ const elements = {
   weekTitle: document.getElementById('weekTitle'),
   weekStatusBadge: document.getElementById('weekStatusBadge'),
   activePlayerBadge: document.getElementById('activePlayerBadge'),
-  winnerSummaryBox: document.getElementById('winnerSummaryBox'),
-  winnerSummaryTeam: document.getElementById('winnerSummaryTeam'),
-  winnerSummaryPts: document.getElementById('winnerSummaryPts'),
-  loserSummaryBox: document.getElementById('loserSummaryBox'),
-  loserSummaryTeam: document.getElementById('loserSummaryTeam'),
-  loserSummaryPts: document.getElementById('loserSummaryPts'),
+  singlePickSummaryBox: document.getElementById('singlePickSummaryBox'),
+  pickTypeTag: document.getElementById('pickTypeTag'),
+  singlePickTeam: document.getElementById('singlePickTeam'),
+  singlePickPts: document.getElementById('singlePickPts'),
   totalWeekPts: document.getElementById('totalWeekPts'),
   standingsTableBody: document.getElementById('standingsTableBody'),
   teamsGrid: document.getElementById('teamsGrid'),
@@ -255,13 +253,11 @@ function renderTeamRow(teamId, teamData, score, oppScore, status, currentWeekPic
             <span class="burnt-badge">${burntLabel}</span>
           ` : `
             <button class="btn-pick winner ${isWinnerSelected ? 'selected' : ''}" 
-                    data-team="${teamId}" data-type="WINNER" 
-                    ${isLoserSelected ? 'disabled' : ''}>
+                    data-team="${teamId}" data-type="WINNER">
               ${isWinnerSelected ? '✓ WINNER' : '+ WIN'}
             </button>
             <button class="btn-pick loser ${isLoserSelected ? 'selected' : ''}" 
-                    data-team="${teamId}" data-type="LOSER" 
-                    ${isWinnerSelected ? 'disabled' : ''}>
+                    data-team="${teamId}" data-type="LOSER">
               ${isLoserSelected ? '✓ LOSER' : '+ LOSS'}
             </button>
           `}
@@ -284,46 +280,44 @@ function renderPicksSummary() {
 
   let totalPts = 0;
 
-  // Winner Pick Summary
   if (currentWeekPicks.winnerTeamId) {
-    const team = NFL_TEAMS[currentWeekPicks.winnerTeamId];
-    const game = weekData.games.find(g => g.home === team.id || g.away === team.id);
+    const team = NFL_TEAMS[currentWeekPicks.winnerTeamId] || { name: currentWeekPicks.winnerTeamId, city: '' };
+    const game = weekData?.games?.find(g => g.home === team.id || g.away === team.id);
     const scoreRes = calculatePickScore(team.id, 'WINNER', game);
 
-    elements.winnerSummaryBox.className = 'summary-pick-item active-winner';
-    elements.winnerSummaryTeam.textContent = `${team.city} ${team.name}`;
-    
-    if (scoreRes.status === 'COMPLETED') {
-      elements.winnerSummaryPts.textContent = `+${scoreRes.points} pts`;
-      totalPts += scoreRes.points;
-    } else {
-      elements.winnerSummaryPts.textContent = 'Pending';
-    }
-  } else {
-    elements.winnerSummaryBox.className = 'summary-pick-item';
-    elements.winnerSummaryTeam.textContent = 'None Selected';
-    elements.winnerSummaryPts.textContent = '0 pts';
-  }
+    elements.singlePickSummaryBox.className = 'summary-pick-item active-winner';
+    elements.pickTypeTag.className = 'pick-type-tag winner';
+    elements.pickTypeTag.textContent = 'BLOWOUT WINNER PICK';
+    elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
 
-  // Loser Pick Summary
-  if (currentWeekPicks.loserTeamId) {
-    const team = NFL_TEAMS[currentWeekPicks.loserTeamId];
-    const game = weekData.games.find(g => g.home === team.id || g.away === team.id);
+    if (scoreRes.status === 'COMPLETED') {
+      elements.singlePickPts.textContent = `+${scoreRes.points} pts`;
+      totalPts = scoreRes.points;
+    } else {
+      elements.singlePickPts.textContent = 'Pending';
+    }
+  } else if (currentWeekPicks.loserTeamId) {
+    const team = NFL_TEAMS[currentWeekPicks.loserTeamId] || { name: currentWeekPicks.loserTeamId, city: '' };
+    const game = weekData?.games?.find(g => g.home === team.id || g.away === team.id);
     const scoreRes = calculatePickScore(team.id, 'LOSER', game);
 
-    elements.loserSummaryBox.className = 'summary-pick-item active-loser';
-    elements.loserSummaryTeam.textContent = `${team.city} ${team.name}`;
+    elements.singlePickSummaryBox.className = 'summary-pick-item active-loser';
+    elements.pickTypeTag.className = 'pick-type-tag loser';
+    elements.pickTypeTag.textContent = 'BLOWOUT LOSER PICK';
+    elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
 
     if (scoreRes.status === 'COMPLETED') {
-      elements.loserSummaryPts.textContent = `+${scoreRes.points} pts`;
-      totalPts += scoreRes.points;
+      elements.singlePickPts.textContent = `+${scoreRes.points} pts`;
+      totalPts = scoreRes.points;
     } else {
-      elements.loserSummaryPts.textContent = 'Pending';
+      elements.singlePickPts.textContent = 'Pending';
     }
   } else {
-    elements.loserSummaryBox.className = 'summary-pick-item';
-    elements.loserSummaryTeam.textContent = 'None Selected';
-    elements.loserSummaryPts.textContent = '0 pts';
+    elements.singlePickSummaryBox.className = 'summary-pick-item';
+    elements.pickTypeTag.className = 'pick-type-tag winner';
+    elements.pickTypeTag.textContent = 'WEEK SELECTION';
+    elements.singlePickTeam.textContent = 'None Selected';
+    elements.singlePickPts.textContent = '0 pts';
   }
 
   elements.totalWeekPts.textContent = `${totalPts} PTS`;
@@ -511,7 +505,7 @@ function setupEventListeners() {
     renderScoreManager();
   });
 
-  // Pick Button Click Delegation (Survivor Check Enforced)
+  // Pick Button Click Delegation (Single Pick Per Week & Survivor Rule Enforced)
   elements.matchupsGrid.addEventListener('click', (e) => {
     const btn = e.target.closest('.btn-pick');
     if (!btn || btn.disabled) return;
@@ -527,28 +521,30 @@ function setupEventListeners() {
 
     const weekPicks = activePlayer.picks[`week${state.currentWeek}`];
 
-    // Toggle Pick
+    // Single Pick Logic (Winner or Loser)
     if (pickType === 'WINNER') {
       if (weekPicks.winnerTeamId === teamId) {
         weekPicks.winnerTeamId = null;
       } else {
-        // Enforce Survivor Rule
-        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek, 'WINNER')) {
-          showToast(`Cannot pick ${teamId}: Team has already been used this season!`, 'error');
+        // Enforce Survivor Rule across all weeks
+        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek)) {
+          showToast(`Cannot pick ${teamId}: Team has already been used in another week!`, 'error');
           return;
         }
         weekPicks.winnerTeamId = teamId;
+        weekPicks.loserTeamId = null; // Clear any existing loser pick for this week
       }
     } else if (pickType === 'LOSER') {
       if (weekPicks.loserTeamId === teamId) {
         weekPicks.loserTeamId = null;
       } else {
-        // Enforce Survivor Rule
-        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek, 'LOSER')) {
-          showToast(`Cannot pick ${teamId}: Team has already been used this season!`, 'error');
+        // Enforce Survivor Rule across all weeks
+        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek)) {
+          showToast(`Cannot pick ${teamId}: Team has already been used in another week!`, 'error');
           return;
         }
         weekPicks.loserTeamId = teamId;
+        weekPicks.winnerTeamId = null; // Clear any existing winner pick for this week
       }
     }
 
@@ -556,7 +552,7 @@ function setupEventListeners() {
     renderMatchups();
     renderPicksSummary();
     renderWeekCarousel();
-    showToast(`Picks updated for ${activePlayer.name}`);
+    showToast(`Week ${state.currentWeek} pick updated for ${activePlayer.name}`);
   });
 
   // Clear Week Picks
