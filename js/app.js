@@ -121,6 +121,20 @@ function getActivePlayer() {
   return state.league.players.find(p => p.id === activeId) || state.league.players[0];
 }
 
+function showToast(message, type = 'success') {
+  if (!elements.toastContainer) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  if (type === 'error') {
+    toast.style.borderColor = 'var(--color-red)';
+  }
+  toast.textContent = message;
+  elements.toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 3200);
+}
+
 function syncAccountsWithPlayers() {
   const accounts = getAccounts();
   const players = state.league.players;
@@ -148,27 +162,27 @@ function renderAuthHeader() {
   const currentUser = getCurrentUser();
 
   if (currentUser) {
-    elements.userProfileBadge.style.display = 'flex';
-    elements.userAvatar.textContent = currentUser.avatar || '🏈';
-    elements.userNameText.textContent = currentUser.name;
-    elements.userRoleBadge.textContent = currentUser.role;
-    elements.userRoleBadge.style.color = currentUser.role === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-green)';
+    if (elements.userProfileBadge) elements.userProfileBadge.style.display = 'flex';
+    if (elements.userAvatar) elements.userAvatar.textContent = currentUser.avatar || '🏈';
+    if (elements.userNameText) elements.userNameText.textContent = currentUser.name;
+    if (elements.userRoleBadge) {
+      elements.userRoleBadge.textContent = currentUser.role;
+      elements.userRoleBadge.style.color = currentUser.role === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-green)';
+    }
 
-    elements.btnSignIn.style.display = 'none';
-    elements.btnRegister.style.display = 'none';
-    elements.btnSignOut.style.display = 'inline-flex';
+    if (elements.btnSignIn) elements.btnSignIn.style.display = 'none';
+    if (elements.btnRegister) elements.btnRegister.style.display = 'none';
+    if (elements.btnSignOut) elements.btnSignOut.style.display = 'inline-flex';
 
-    if (currentUser.role === 'ADMIN') {
-      elements.btnAdminPanel.style.display = 'inline-flex';
-    } else {
-      elements.btnAdminPanel.style.display = 'none';
+    if (elements.btnAdminPanel) {
+      elements.btnAdminPanel.style.display = currentUser.role === 'ADMIN' ? 'inline-flex' : 'none';
     }
   } else {
-    elements.userProfileBadge.style.display = 'none';
-    elements.btnSignIn.style.display = 'inline-flex';
-    elements.btnRegister.style.display = 'inline-flex';
-    elements.btnSignOut.style.display = 'none';
-    elements.btnAdminPanel.style.display = 'none';
+    if (elements.userProfileBadge) elements.userProfileBadge.style.display = 'none';
+    if (elements.btnSignIn) elements.btnSignIn.style.display = 'inline-flex';
+    if (elements.btnRegister) elements.btnRegister.style.display = 'inline-flex';
+    if (elements.btnSignOut) elements.btnSignOut.style.display = 'none';
+    if (elements.btnAdminPanel) elements.btnAdminPanel.style.display = 'none';
   }
 }
 
@@ -192,15 +206,17 @@ function renderPlayerDropdowns() {
   const players = state.league.players;
   const activeId = state.league.activePlayerId;
 
-  // Header Dropdown
-  elements.playerDropdown.innerHTML = players
-    .map(p => `<option value="${p.id}" ${p.id === activeId ? 'selected' : ''}>${p.avatar} ${p.name}</option>`)
-    .join('');
+  if (elements.playerDropdown) {
+    elements.playerDropdown.innerHTML = players
+      .map(p => `<option value="${p.id}" ${p.id === activeId ? 'selected' : ''}>${p.avatar} ${p.name}</option>`)
+      .join('');
+  }
 
-  // Matrix Filter Dropdown
-  elements.matrixPlayerSelect.innerHTML = players
-    .map(p => `<option value="${p.id}" ${p.id === activeId ? 'selected' : ''}>${p.avatar} ${p.name}</option>`)
-    .join('');
+  if (elements.matrixPlayerSelect) {
+    elements.matrixPlayerSelect.innerHTML = players
+      .map(p => `<option value="${p.id}" ${p.id === activeId ? 'selected' : ''}>${p.avatar} ${p.name}</option>`)
+      .join('');
+  }
 }
 
 function renderWeekCarousel() {
@@ -219,12 +235,12 @@ function renderWeekCarousel() {
     `;
   }
 
-  elements.weekCarousel.innerHTML = html;
-
-  // Scroll active pill into view
-  const activePill = elements.weekCarousel.querySelector('.week-pill.active');
-  if (activePill) {
-    activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  if (elements.weekCarousel) {
+    elements.weekCarousel.innerHTML = html;
+    const activePill = elements.weekCarousel.querySelector('.week-pill.active');
+    if (activePill) {
+      activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
   }
 }
 
@@ -236,55 +252,62 @@ function renderMatchups() {
   const weekData = state.league.schedule.find(w => w.week === state.currentWeek);
   if (!weekData) return;
 
-  elements.weekTitle.textContent = `Week ${state.currentWeek} Matchups`;
+  if (elements.weekTitle) elements.weekTitle.textContent = `Week ${state.currentWeek} Matchups`;
   
   if (!weekData.games || weekData.games.length === 0) {
-    elements.weekStatusBadge.textContent = 'FETCHING ESPN SCHEDULE';
-    elements.weekStatusBadge.className = 'game-status-badge scheduled';
-    elements.matchupsGrid.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-        <div style="font-size: 2.2rem; margin-bottom: 12px; animation: pulse 1.5s infinite;">🌐</div>
-        <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;">Fetching Real 2026 NFL Schedule...</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Loading official matchups directly from ESPN API...</p>
-      </div>
-    `;
+    if (elements.weekStatusBadge) {
+      elements.weekStatusBadge.textContent = 'FETCHING ESPN SCHEDULE';
+      elements.weekStatusBadge.className = 'game-status-badge scheduled';
+    }
+    if (elements.matchupsGrid) {
+      elements.matchupsGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+          <div style="font-size: 2.2rem; margin-bottom: 12px; animation: pulse 1.5s infinite;">🌐</div>
+          <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;">Fetching Real 2026 NFL Schedule...</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Loading official matchups directly from ESPN API...</p>
+        </div>
+      `;
+    }
     return;
   }
 
   const allFinal = weekData.games.every(g => g.status === 'FINAL');
-  elements.weekStatusBadge.textContent = allFinal ? 'FINAL SCORES' : 'SCHEDULED';
-  elements.weekStatusBadge.className = `game-status-badge ${allFinal ? 'final' : 'scheduled'}`;
+  if (elements.weekStatusBadge) {
+    elements.weekStatusBadge.textContent = allFinal ? 'FINAL SCORES' : 'SCHEDULED';
+    elements.weekStatusBadge.className = `game-status-badge ${allFinal ? 'final' : 'scheduled'}`;
+  }
 
   const activePlayer = getActivePlayer();
   const currentWeekPicks = activePlayer.picks?.[`week${state.currentWeek}`] || {};
   const usedTeamsMap = getPlayerUsedTeamsMap(activePlayer.picks);
 
-  elements.matchupsGrid.innerHTML = weekData.games.map(game => {
-    const homeTeam = NFL_TEAMS[game.home] || { name: game.home, city: '', primaryColor: '#333', logoSvg: '' };
-    const awayTeam = NFL_TEAMS[game.away] || { name: game.away, city: '', primaryColor: '#333', logoSvg: '' };
+  if (elements.matchupsGrid) {
+    elements.matchupsGrid.innerHTML = weekData.games.map(game => {
+      const homeTeam = NFL_TEAMS[game.home] || { name: game.home, city: '', primaryColor: '#333', logoSvg: '' };
+      const awayTeam = NFL_TEAMS[game.away] || { name: game.away, city: '', primaryColor: '#333', logoSvg: '' };
 
-    return `
-      <div class="matchup-card" data-game-id="${game.id}">
-        <div class="matchup-header">
-          <span>${awayTeam.city} @ ${homeTeam.city}</span>
-          <span class="game-status-badge ${game.status === 'FINAL' ? 'final' : 'scheduled'}">${game.status}</span>
+      return `
+        <div class="matchup-card" data-game-id="${game.id}">
+          <div class="matchup-header">
+            <span>${awayTeam.city} @ ${homeTeam.city}</span>
+            <span class="game-status-badge ${game.status === 'FINAL' ? 'final' : 'scheduled'}">${game.status}</span>
+          </div>
+
+          <!-- Away Team Row -->
+          ${renderTeamRow(game.away, awayTeam, game.awayScore, game.homeScore, game.status, currentWeekPicks, usedTeamsMap)}
+
+          <!-- Home Team Row -->
+          ${renderTeamRow(game.home, homeTeam, game.homeScore, game.awayScore, game.status, currentWeekPicks, usedTeamsMap)}
         </div>
-
-        <!-- Away Team Row -->
-        ${renderTeamRow(game.away, awayTeam, game.awayScore, game.homeScore, game.status, currentWeekPicks, usedTeamsMap)}
-
-        <!-- Home Team Row -->
-        ${renderTeamRow(game.home, homeTeam, game.homeScore, game.awayScore, game.status, currentWeekPicks, usedTeamsMap)}
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
 }
 
 function renderTeamRow(teamId, teamData, score, oppScore, status, currentWeekPicks, usedTeamsMap) {
   const isWinnerSelected = currentWeekPicks.winnerTeamId === teamId;
   const isLoserSelected = currentWeekPicks.loserTeamId === teamId;
 
-  // Survivor check: is team used in another week or opposite pick type?
   const burntEntry = usedTeamsMap[teamId];
   let isBurnt = false;
   let burntLabel = '';
@@ -338,7 +361,9 @@ function renderTeamRow(teamId, teamData, score, oppScore, status, currentWeekPic
 
 function renderPicksSummary() {
   const activePlayer = getActivePlayer();
-  elements.activePlayerBadge.textContent = `${activePlayer.avatar} ${activePlayer.name}`;
+  if (elements.activePlayerBadge) {
+    elements.activePlayerBadge.textContent = `${activePlayer.avatar} ${activePlayer.name}`;
+  }
 
   const currentWeekPicks = activePlayer.picks?.[`week${state.currentWeek}`] || {};
   const weekData = state.league.schedule.find(w => w.week === state.currentWeek);
@@ -350,51 +375,69 @@ function renderPicksSummary() {
     const game = weekData?.games?.find(g => g.home === team.id || g.away === team.id);
     const scoreRes = calculatePickScore(team.id, 'WINNER', game);
 
-    elements.singlePickSummaryBox.className = 'summary-pick-item active-winner';
-    elements.pickTypeTag.className = 'pick-type-tag winner';
-    elements.pickTypeTag.textContent = 'BLOWOUT WINNER PICK';
-    elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
+    if (elements.singlePickSummaryBox) elements.singlePickSummaryBox.className = 'summary-pick-item active-winner';
+    if (elements.pickTypeTag) {
+      elements.pickTypeTag.className = 'pick-type-tag winner';
+      elements.pickTypeTag.textContent = 'BLOWOUT WINNER PICK';
+    }
+    if (elements.singlePickTeam) elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
 
     if (scoreRes.status === 'COMPLETED') {
       const ptsPrefix = scoreRes.points > 0 ? '+' : '';
-      elements.singlePickPts.textContent = `${ptsPrefix}${scoreRes.points} pts`;
-      elements.singlePickPts.style.color = scoreRes.points < 0 ? 'var(--color-red)' : 'var(--color-gold)';
+      if (elements.singlePickPts) {
+        elements.singlePickPts.textContent = `${ptsPrefix}${scoreRes.points} pts`;
+        elements.singlePickPts.style.color = scoreRes.points < 0 ? 'var(--color-red)' : 'var(--color-gold)';
+      }
       totalPts = scoreRes.points;
     } else {
-      elements.singlePickPts.textContent = 'Pending';
-      elements.singlePickPts.style.color = 'var(--color-gold)';
+      if (elements.singlePickPts) {
+        elements.singlePickPts.textContent = 'Pending';
+        elements.singlePickPts.style.color = 'var(--color-gold)';
+      }
     }
   } else if (currentWeekPicks.loserTeamId) {
     const team = NFL_TEAMS[currentWeekPicks.loserTeamId] || { name: currentWeekPicks.loserTeamId, city: '' };
     const game = weekData?.games?.find(g => g.home === team.id || g.away === team.id);
     const scoreRes = calculatePickScore(team.id, 'LOSER', game);
 
-    elements.singlePickSummaryBox.className = 'summary-pick-item active-loser';
-    elements.pickTypeTag.className = 'pick-type-tag loser';
-    elements.pickTypeTag.textContent = 'BLOWOUT LOSER PICK';
-    elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
+    if (elements.singlePickSummaryBox) elements.singlePickSummaryBox.className = 'summary-pick-item active-loser';
+    if (elements.pickTypeTag) {
+      elements.pickTypeTag.className = 'pick-type-tag loser';
+      elements.pickTypeTag.textContent = 'BLOWOUT LOSER PICK';
+    }
+    if (elements.singlePickTeam) elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
 
     if (scoreRes.status === 'COMPLETED') {
       const ptsPrefix = scoreRes.points > 0 ? '+' : '';
-      elements.singlePickPts.textContent = `${ptsPrefix}${scoreRes.points} pts`;
-      elements.singlePickPts.style.color = scoreRes.points < 0 ? 'var(--color-red)' : 'var(--color-gold)';
+      if (elements.singlePickPts) {
+        elements.singlePickPts.textContent = `${ptsPrefix}${scoreRes.points} pts`;
+        elements.singlePickPts.style.color = scoreRes.points < 0 ? 'var(--color-red)' : 'var(--color-gold)';
+      }
       totalPts = scoreRes.points;
     } else {
-      elements.singlePickPts.textContent = 'Pending';
-      elements.singlePickPts.style.color = 'var(--color-gold)';
+      if (elements.singlePickPts) {
+        elements.singlePickPts.textContent = 'Pending';
+        elements.singlePickPts.style.color = 'var(--color-gold)';
+      }
     }
   } else {
-    elements.singlePickSummaryBox.className = 'summary-pick-item';
-    elements.pickTypeTag.className = 'pick-type-tag winner';
-    elements.pickTypeTag.textContent = 'WEEK SELECTION';
-    elements.singlePickTeam.textContent = 'None Selected';
-    elements.singlePickPts.textContent = '0 pts';
-    elements.singlePickPts.style.color = 'var(--color-gold)';
+    if (elements.singlePickSummaryBox) elements.singlePickSummaryBox.className = 'summary-pick-item';
+    if (elements.pickTypeTag) {
+      elements.pickTypeTag.className = 'pick-type-tag winner';
+      elements.pickTypeTag.textContent = 'WEEK SELECTION';
+    }
+    if (elements.singlePickTeam) elements.singlePickTeam.textContent = 'None Selected';
+    if (elements.singlePickPts) {
+      elements.singlePickPts.textContent = '0 pts';
+      elements.singlePickPts.style.color = 'var(--color-gold)';
+    }
   }
 
   const totalPrefix = totalPts > 0 ? '+' : '';
-  elements.totalWeekPts.textContent = `${totalPrefix}${totalPts} PTS`;
-  elements.totalWeekPts.style.color = totalPts < 0 ? 'var(--color-red)' : 'var(--color-green)';
+  if (elements.totalWeekPts) {
+    elements.totalWeekPts.textContent = `${totalPrefix}${totalPts} PTS`;
+    elements.totalWeekPts.style.color = totalPts < 0 ? 'var(--color-red)' : 'var(--color-green)';
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -404,32 +447,34 @@ function renderPicksSummary() {
 function renderStandings() {
   const standings = calculateStandings(state.league.players, state.league.schedule);
 
-  elements.standingsTableBody.innerHTML = standings.map(p => {
-    let rankBadgeClass = '';
-    if (p.rank === 1) rankBadgeClass = 'rank-1';
-    else if (p.rank === 2) rankBadgeClass = 'rank-2';
-    else if (p.rank === 3) rankBadgeClass = 'rank-3';
+  if (elements.standingsTableBody) {
+    elements.standingsTableBody.innerHTML = standings.map(p => {
+      let rankBadgeClass = '';
+      if (p.rank === 1) rankBadgeClass = 'rank-1';
+      else if (p.rank === 2) rankBadgeClass = 'rank-2';
+      else if (p.rank === 3) rankBadgeClass = 'rank-3';
 
-    return `
-      <tr class="leaderboard-row">
-        <td>
-          <div class="rank-badge ${rankBadgeClass}">
-            ${p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : p.rank}
-          </div>
-        </td>
-        <td>
-          <div class="player-info-cell">
-            <span class="player-avatar">${p.avatar}</span>
-            <span class="player-name-text">${p.name}</span>
-          </div>
-        </td>
-        <td class="total-pts-text" style="color: ${p.totalPoints < 0 ? 'var(--color-red)' : 'var(--color-green)'};">${p.totalPoints > 0 ? '+' : ''}${p.totalPoints} pts</td>
-        <td style="font-weight: 700;">${p.totalCorrectPicks} / ${p.totalPicksMade}</td>
-        <td style="color: var(--color-cyan); font-weight: 700;">${p.accuracyPct}%</td>
-        <td style="color: var(--color-gold); font-weight: 700;">+${p.maxBlowoutPoints} pts</td>
-      </tr>
-    `;
-  }).join('');
+      return `
+        <tr class="leaderboard-row">
+          <td>
+            <div class="rank-badge ${rankBadgeClass}">
+              ${p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : p.rank}
+            </div>
+          </td>
+          <td>
+            <div class="player-info-cell">
+              <span class="player-avatar">${p.avatar}</span>
+              <span class="player-name-text">${p.name}</span>
+            </div>
+          </td>
+          <td class="total-pts-text" style="color: ${p.totalPoints < 0 ? 'var(--color-red)' : 'var(--color-green)'};">${p.totalPoints > 0 ? '+' : ''}${p.totalPoints} pts</td>
+          <td style="font-weight: 700;">${p.totalCorrectPicks} / ${p.totalPicksMade}</td>
+          <td style="color: var(--color-cyan); font-weight: 700;">${p.accuracyPct}%</td>
+          <td style="color: var(--color-gold); font-weight: 700;">+${p.maxBlowoutPoints} pts</td>
+        </tr>
+      `;
+    }).join('');
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -437,32 +482,34 @@ function renderStandings() {
 /* -------------------------------------------------------------------------- */
 
 function renderMatrix() {
-  const selectedPlayerId = elements.matrixPlayerSelect.value || state.league.activePlayerId;
+  const selectedPlayerId = elements.matrixPlayerSelect?.value || state.league.activePlayerId;
   const player = state.league.players.find(p => p.id === selectedPlayerId);
 
   if (!player) return;
 
   const usedMap = getPlayerUsedTeamsMap(player.picks);
 
-  elements.teamsGrid.innerHTML = Object.values(NFL_TEAMS).map(team => {
-    const usedEntry = usedMap[team.id];
-    const isUsed = !!usedEntry;
+  if (elements.teamsGrid) {
+    elements.teamsGrid.innerHTML = Object.values(NFL_TEAMS).map(team => {
+      const usedEntry = usedMap[team.id];
+      const isUsed = !!usedEntry;
 
-    return `
-      <div class="matrix-team-card ${isUsed ? 'used' : 'available'}">
-        ${isUsed ? `
-          <span class="matrix-used-tag ${usedEntry.type.toLowerCase()}">
-            Wk ${usedEntry.week} ${usedEntry.type}
-          </span>
-        ` : ''}
-        <div class="team-logo-badge" style="width: 44px; height: 44px; margin-bottom: 8px;">
-          ${team.logoSvg}
+      return `
+        <div class="matrix-team-card ${isUsed ? 'used' : 'available'}">
+          ${isUsed ? `
+            <span class="matrix-used-tag ${usedEntry.type.toLowerCase()}">
+              Wk ${usedEntry.week} ${usedEntry.type}
+            </span>
+          ` : ''}
+          <div class="team-logo-badge" style="width: 44px; height: 44px; margin-bottom: 8px;">
+            ${team.logoSvg}
+          </div>
+          <div style="font-weight: 800; font-size: 0.9rem;">${team.name}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${team.id}</div>
         </div>
-        <div style="font-weight: 800; font-size: 0.9rem;">${team.name}</div>
-        <div style="font-size: 0.75rem; color: var(--text-muted);">${team.id}</div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -470,19 +517,21 @@ function renderMatrix() {
 /* -------------------------------------------------------------------------- */
 
 function populateScoreWeekDropdown() {
-  elements.scoreWeekDropdown.innerHTML = Array.from({ length: 18 }, (_, i) => i + 1)
-    .map(w => `<option value="${w}">Week ${w}</option>`).join('');
+  if (elements.scoreWeekDropdown) {
+    elements.scoreWeekDropdown.innerHTML = Array.from({ length: 18 }, (_, i) => i + 1)
+      .map(w => `<option value="${w}">Week ${w}</option>`).join('');
+  }
 }
 
 function renderScoreManager() {
-  const editWeek = parseInt(elements.scoreWeekDropdown.value || '1', 10);
+  const editWeek = parseInt(elements.scoreWeekDropdown?.value || '1', 10);
   const weekData = state.league.schedule.find(w => w.week === editWeek);
 
-  if (!weekData) return;
+  if (!weekData || !elements.scoreEditorGrid) return;
 
   elements.scoreEditorGrid.innerHTML = weekData.games.map(game => {
-    const homeTeam = NFL_TEAMS[game.home];
-    const awayTeam = NFL_TEAMS[game.away];
+    const homeTeam = NFL_TEAMS[game.home] || { name: game.home, id: game.home };
+    const awayTeam = NFL_TEAMS[game.away] || { name: game.away, id: game.away };
 
     return `
       <div class="matchup-card" style="padding: 14px;">
@@ -503,280 +552,6 @@ function renderScoreManager() {
 
         <button class="btn btn-secondary btn-save-score" data-game-id="${game.id}" style="width: 100%; justify-content: center; padding: 6px; font-size: 0.75rem;">
           💾 Save Game Score
-        </button>
-      </div>
-    `;
-  }).join('');
-}
-
-/* -------------------------------------------------------------------------- */
-/* Event Listeners Setup                                                     */
-/* -------------------------------------------------------------------------- */
-
-function setupEventListeners() {
-  // Tab Switching
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-
-      btn.classList.add('active');
-      const targetId = btn.dataset.tab;
-      const targetContent = document.getElementById(targetId);
-      if (targetContent) targetContent.style.display = 'block';
-
-      if (targetId === 'tabStandings') renderStandings();
-      if (targetId === 'tabMatrix') renderMatrix();
-      if (targetId === 'tabScores') renderScoreManager();
-    });
-  });
-
-  // Week Pill Selection
-  elements.weekCarousel.addEventListener('click', async (e) => {
-    const pill = e.target.closest('.week-pill');
-    if (pill) {
-      state.currentWeek = parseInt(pill.dataset.week, 10);
-      renderWeekCarousel();
-      renderMatchups();
-      renderPicksSummary();
-      await autoSyncWeekSchedule(state.currentWeek);
-    }
-  });
-
-  elements.btnPrevWeek.addEventListener('click', async () => {
-    if (state.currentWeek > 1) {
-      state.currentWeek--;
-      renderWeekCarousel();
-      renderMatchups();
-      renderPicksSummary();
-      await autoSyncWeekSchedule(state.currentWeek);
-    }
-  });
-
-  elements.btnNextWeek.addEventListener('click', async () => {
-    if (state.currentWeek < 18) {
-      state.currentWeek++;
-      renderWeekCarousel();
-      renderMatchups();
-      renderPicksSummary();
-      await autoSyncWeekSchedule(state.currentWeek);
-    }
-  });
-
-  // Active Player Switcher
-  elements.playerDropdown.addEventListener('change', (e) => {
-    state.league.activePlayerId = e.target.value;
-    saveLeagueData(state.league);
-    renderAll();
-    showToast(`Switched active player to ${getActivePlayer().name}`);
-  });
-
-  elements.matrixPlayerSelect.addEventListener('change', () => {
-    renderMatrix();
-  });
-
-  elements.scoreWeekDropdown.addEventListener('change', () => {
-    renderScoreManager();
-  });
-
-  // Pick Button Click Delegation (Single Pick Per Week & Survivor Rule Enforced)
-  elements.matchupsGrid.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-pick');
-    if (!btn || btn.disabled) return;
-
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      showToast('🔐 Please sign in to your account to make picks!', 'error');
-      elements.modalAuth.classList.add('active');
-      return;
-    }
-
-    const activePlayer = getActivePlayer();
-    if (!isAdmin() && activePlayer.id !== currentUser.userId) {
-      showToast(`🔐 You can only make picks for your own account (${currentUser.name})!`, 'error');
-      return;
-    }
-
-    const teamId = btn.dataset.team;
-    const pickType = btn.dataset.type; // 'WINNER' or 'LOSER'
-
-    if (!activePlayer.picks) activePlayer.picks = {};
-    if (!activePlayer.picks[`week${state.currentWeek}`]) {
-      activePlayer.picks[`week${state.currentWeek}`] = { winnerTeamId: null, loserTeamId: null };
-    }
-
-    const weekPicks = activePlayer.picks[`week${state.currentWeek}`];
-
-    // Single Pick Logic (Winner or Loser)
-    if (pickType === 'WINNER') {
-      if (weekPicks.winnerTeamId === teamId) {
-        weekPicks.winnerTeamId = null;
-      } else {
-        // Enforce Survivor Rule across all weeks
-        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek)) {
-          showToast(`Cannot pick ${teamId}: Team has already been used in another week!`, 'error');
-          return;
-        }
-        weekPicks.winnerTeamId = teamId;
-        weekPicks.loserTeamId = null; // Clear any existing loser pick for this week
-      }
-    } else if (pickType === 'LOSER') {
-      if (weekPicks.loserTeamId === teamId) {
-        weekPicks.loserTeamId = null;
-      } else {
-        // Enforce Survivor Rule across all weeks
-        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek)) {
-          showToast(`Cannot pick ${teamId}: Team has already been used in another week!`, 'error');
-          return;
-        }
-        weekPicks.loserTeamId = teamId;
-        weekPicks.winnerTeamId = null; // Clear any existing winner pick for this week
-      }
-    }
-
-    saveLeagueData(state.league);
-    renderMatchups();
-    renderPicksSummary();
-    renderWeekCarousel();
-    showToast(`Week ${state.currentWeek} pick updated for ${activePlayer.name}`);
-  });
-
-  // Clear Week Picks
-  elements.btnClearPicks.addEventListener('click', () => {
-    const activePlayer = getActivePlayer();
-    if (activePlayer.picks?.[`week${state.currentWeek}`]) {
-      activePlayer.picks[`week${state.currentWeek}`] = { winnerTeamId: null, loserTeamId: null };
-      saveLeagueData(state.league);
-      renderMatchups();
-      renderPicksSummary();
-      renderWeekCarousel();
-      showToast('Cleared week picks');
-    }
-  });
-
-  // Score Simulation Button
-  elements.btnSimulateWeek.addEventListener('click', () => {
-    const editWeek = parseInt(elements.scoreWeekDropdown.value, 10);
-    state.league.schedule = simulateWeekScores(state.league.schedule, editWeek);
-    saveLeagueData(state.league);
-    renderAll();
-    showToast(`Simulated Week ${editWeek} game scores!`);
-  });
-
-  // Save Game Score in Manager
-  elements.scoreEditorGrid.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-save-score');
-    if (!btn) return;
-
-    const gameId = btn.dataset.gameId;
-    const card = btn.closest('.matchup-card');
-    const awayInput = card.querySelector('input[data-team="away"]');
-    const homeInput = card.querySelector('input[data-team="home"]');
-
-    const editWeek = parseInt(elements.scoreWeekDropdown.value, 10);
-    state.league.schedule = updateGameScore(
-      state.league.schedule,
-      editWeek,
-      gameId,
-      homeInput.value,
-      awayInput.value,
-      true
-    );
-
-    saveLeagueData(state.league);
-    renderAll();
-    showToast('Score updated!');
-  });
-
-  // Copy Leaderboard Summary to Clipboard
-  elements.btnShareLeaderboard.addEventListener('click', () => {
-    const standings = calculateStandings(state.league.players, state.league.schedule);
-    let summaryText = `🏆 ${state.league.leagueName} Standings 🏆\n\n`;
-    standings.forEach(p => {
-      summaryText += `${p.rank}. ${p.avatar} ${p.name} - ${p.totalPoints} pts (${p.accuracyPct}% acc)\n`;
-    });
-    summaryText += `\nPlay NFL Blowout Pick'em on GitHub Pages!`;
-
-    navigator.clipboard.writeText(summaryText).then(() => {
-      showToast('Standings copied to clipboard!');
-    });
-  });
-
-  // Live Real NFL Data Sync via ESPN API
-  if (elements.btnLiveSync) {
-    elements.btnLiveSync.addEventListener('click', async () => {
-      showToast(`Fetching live 2026 NFL data for Week ${state.currentWeek}...`);
-      elements.btnLiveSync.disabled = true;
-      
-      const res = await fetchLiveNflScores(state.currentWeek, 2026);
-      elements.btnLiveSync.disabled = false;
-
-      if (res.success && res.games.length > 0) {
-        state.league.schedule = mergeLiveGamesIntoSchedule(state.league.schedule, state.currentWeek, res.games);
-        saveLeagueData(state.league);
-        renderAll();
-        showToast(`Successfully synced ${res.games.length} real NFL games for Week ${state.currentWeek}!`);
-      } else {
-        showToast(`Could not fetch live scores: ${res.error || 'No games found for this week'}`, 'error');
-      }
-    });
-  }
-
-  // Export / Import Data
-  elements.btnExportFile.addEventListener('click', () => {
-    exportLeagueJson(state.league);
-  });
-
-  elements.inputImportFile.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const res = importLeagueJson(event.target.result);
-      if (res.success) {
-        state.league = res.data;
-        renderAll();
-        showToast('League data successfully imported!');
-        elements.modalExportImport.classList.remove('active');
-      } else {
-        showToast(`Import error: ${res.error}`, 'error');
-      }
-    };
-    reader.readAsText(file);
-  });
-
-  elements.btnResetLeague.addEventListener('click', () => {
-    if (confirm('Are you sure you want to reset the league to default settings?')) {
-      state.league = resetToDefaultLeague();
-      renderAll();
-      showToast('League reset to defaults!');
-      elements.modalExportImport.classList.remove('active');
-    }
-  });
-
-/* -------------------------------------------------------------------------- */
-/* Manage Players List Renderer                                              */
-/* -------------------------------------------------------------------------- */
-
-function renderManagePlayersList() {
-  if (!elements.managePlayersList) return;
-
-  const players = state.league.players;
-  const activeId = state.league.activePlayerId;
-
-  elements.managePlayersList.innerHTML = players.map(p => {
-    const isActive = p.id === activeId;
-    return `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.4rem;">${p.avatar}</span>
-          <span style="font-weight: 700;">${p.name}</span>
-          ${isActive ? '<span style="font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,255,135,0.15); color: var(--color-green);">ACTIVE</span>' : ''}
-        </div>
-
-        <button class="btn btn-secondary btn-delete-player" data-player-id="${p.id}" style="color: var(--color-red); border-color: rgba(239,68,68,0.3); padding: 6px 12px; font-size: 0.8rem;">
-          🗑️ Remove
         </button>
       </div>
     `;
@@ -818,35 +593,229 @@ function renderAdminUserList() {
   }).join('');
 }
 
+/* -------------------------------------------------------------------------- */
+/* Event Listeners Setup                                                     */
+/* -------------------------------------------------------------------------- */
+
+function setupEventListeners() {
+  // Navigation Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+      btn.classList.add('active');
+      const targetId = btn.dataset.tab;
+      const targetContent = document.getElementById(targetId);
+      if (targetContent) targetContent.style.display = 'block';
+
+      if (targetId === 'tabStandings') renderStandings();
+      if (targetId === 'tabMatrix') renderMatrix();
+      if (targetId === 'tabScores') renderScoreManager();
+    });
+  });
+
+  // Week Pill Selection
+  elements.weekCarousel?.addEventListener('click', async (e) => {
+    const pill = e.target.closest('.week-pill');
+    if (pill) {
+      state.currentWeek = parseInt(pill.dataset.week, 10);
+      renderWeekCarousel();
+      renderMatchups();
+      renderPicksSummary();
+      await autoSyncWeekSchedule(state.currentWeek);
+    }
+  });
+
+  elements.btnPrevWeek?.addEventListener('click', async () => {
+    if (state.currentWeek > 1) {
+      state.currentWeek--;
+      renderWeekCarousel();
+      renderMatchups();
+      renderPicksSummary();
+      await autoSyncWeekSchedule(state.currentWeek);
+    }
+  });
+
+  elements.btnNextWeek?.addEventListener('click', async () => {
+    if (state.currentWeek < 18) {
+      state.currentWeek++;
+      renderWeekCarousel();
+      renderMatchups();
+      renderPicksSummary();
+      await autoSyncWeekSchedule(state.currentWeek);
+    }
+  });
+
+  // Active Player Switcher
+  elements.playerDropdown?.addEventListener('change', (e) => {
+    state.league.activePlayerId = e.target.value;
+    saveLeagueData(state.league);
+    renderAll();
+    showToast(`Switched active player to ${getActivePlayer().name}`);
+  });
+
+  elements.matrixPlayerSelect?.addEventListener('change', () => {
+    renderMatrix();
+  });
+
+  elements.scoreWeekDropdown?.addEventListener('change', () => {
+    renderScoreManager();
+  });
+
+  // Pick Button Click Delegation (Single Pick Per Week & Survivor Rule Enforced)
+  elements.matchupsGrid?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-pick');
+    if (!btn || btn.disabled) return;
+
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      showToast('🔐 Please sign in to your account to make picks!', 'error');
+      elements.modalAuth?.classList.add('active');
+      return;
+    }
+
+    const activePlayer = getActivePlayer();
+    if (!isAdmin() && activePlayer.id !== currentUser.userId) {
+      showToast(`🔐 You can only make picks for your own account (${currentUser.name})!`, 'error');
+      return;
+    }
+
+    const teamId = btn.dataset.team;
+    const pickType = btn.dataset.type; // 'WINNER' or 'LOSER'
+
+    if (!activePlayer.picks) activePlayer.picks = {};
+    if (!activePlayer.picks[`week${state.currentWeek}`]) {
+      activePlayer.picks[`week${state.currentWeek}`] = { winnerTeamId: null, loserTeamId: null };
+    }
+
+    const weekPicks = activePlayer.picks[`week${state.currentWeek}`];
+
+    if (pickType === 'WINNER') {
+      if (weekPicks.winnerTeamId === teamId) {
+        weekPicks.winnerTeamId = null;
+      } else {
+        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek)) {
+          showToast(`Cannot pick ${teamId}: Team has already been used in another week!`, 'error');
+          return;
+        }
+        weekPicks.winnerTeamId = teamId;
+        weekPicks.loserTeamId = null;
+      }
+    } else if (pickType === 'LOSER') {
+      if (weekPicks.loserTeamId === teamId) {
+        weekPicks.loserTeamId = null;
+      } else {
+        if (isTeamUsedByPlayer(activePlayer.picks, teamId, state.currentWeek)) {
+          showToast(`Cannot pick ${teamId}: Team has already been used in another week!`, 'error');
+          return;
+        }
+        weekPicks.loserTeamId = teamId;
+        weekPicks.winnerTeamId = null;
+      }
+    }
+
+    saveLeagueData(state.league);
+    renderMatchups();
+    renderPicksSummary();
+    renderWeekCarousel();
+    showToast(`Week ${state.currentWeek} pick updated for ${activePlayer.name}`);
+  });
+
+  // Clear Week Picks
+  elements.btnClearPicks?.addEventListener('click', () => {
+    const activePlayer = getActivePlayer();
+    if (activePlayer.picks?.[`week${state.currentWeek}`]) {
+      activePlayer.picks[`week${state.currentWeek}`] = { winnerTeamId: null, loserTeamId: null };
+      saveLeagueData(state.league);
+      renderMatchups();
+      renderPicksSummary();
+      renderWeekCarousel();
+      showToast('Cleared week picks');
+    }
+  });
+
+  // Score Simulation Button
+  elements.btnSimulateWeek?.addEventListener('click', () => {
+    const editWeek = parseInt(elements.scoreWeekDropdown.value, 10);
+    state.league.schedule = simulateWeekScores(state.league.schedule, editWeek);
+    saveLeagueData(state.league);
+    renderAll();
+    showToast(`Simulated Week ${editWeek} game scores!`);
+  });
+
+  // Save Game Score in Manager
+  elements.scoreEditorGrid?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-save-score');
+    if (!btn) return;
+
+    const gameId = btn.dataset.gameId;
+    const card = btn.closest('.matchup-card');
+    const awayInput = card.querySelector('input[data-team="away"]');
+    const homeInput = card.querySelector('input[data-team="home"]');
+
+    const editWeek = parseInt(elements.scoreWeekDropdown.value, 10);
+    state.league.schedule = updateGameScore(
+      state.league.schedule,
+      editWeek,
+      gameId,
+      homeInput.value,
+      awayInput.value,
+      true
+    );
+
+    saveLeagueData(state.league);
+    renderAll();
+    showToast('Score updated!');
+  });
+
+  // Live Real NFL Data Sync via ESPN API
+  elements.btnLiveSync?.addEventListener('click', async () => {
+    showToast(`Fetching live 2026 NFL data for Week ${state.currentWeek}...`);
+    elements.btnLiveSync.disabled = true;
+    
+    const res = await fetchLiveNflScores(state.currentWeek, 2026);
+    elements.btnLiveSync.disabled = false;
+
+    if (res.success && res.games.length > 0) {
+      state.league.schedule = mergeLiveGamesIntoSchedule(state.league.schedule, state.currentWeek, res.games);
+      saveLeagueData(state.league);
+      renderAll();
+      showToast(`Successfully synced ${res.games.length} real NFL games for Week ${state.currentWeek}!`);
+    } else {
+      showToast(`Could not fetch live scores: ${res.error || 'No games found for this week'}`, 'error');
+    }
+  });
+
   // Auth Event Handlers
   elements.btnSignIn?.addEventListener('click', () => {
-    elements.formLogin.style.display = 'block';
-    elements.formRegister.style.display = 'none';
-    elements.tabAuthLogin.classList.add('active');
-    elements.tabAuthRegister.classList.remove('active');
-    elements.modalAuth.classList.add('active');
+    if (elements.formLogin) elements.formLogin.style.display = 'block';
+    if (elements.formRegister) elements.formRegister.style.display = 'none';
+    elements.tabAuthLogin?.classList.add('active');
+    elements.tabAuthRegister?.classList.remove('active');
+    elements.modalAuth?.classList.add('active');
   });
 
   elements.btnRegister?.addEventListener('click', () => {
-    elements.formLogin.style.display = 'none';
-    elements.formRegister.style.display = 'block';
-    elements.tabAuthRegister.classList.add('active');
-    elements.tabAuthLogin.classList.remove('active');
-    elements.modalAuth.classList.add('active');
+    if (elements.formLogin) elements.formLogin.style.display = 'none';
+    if (elements.formRegister) elements.formRegister.style.display = 'block';
+    elements.tabAuthRegister?.classList.add('active');
+    elements.tabAuthLogin?.classList.remove('active');
+    elements.modalAuth?.classList.add('active');
   });
 
   elements.tabAuthLogin?.addEventListener('click', () => {
-    elements.formLogin.style.display = 'block';
-    elements.formRegister.style.display = 'none';
-    elements.tabAuthLogin.classList.add('active');
-    elements.tabAuthRegister.classList.remove('active');
+    if (elements.formLogin) elements.formLogin.style.display = 'block';
+    if (elements.formRegister) elements.formRegister.style.display = 'none';
+    elements.tabAuthLogin?.classList.add('active');
+    elements.tabAuthRegister?.classList.remove('active');
   });
 
   elements.tabAuthRegister?.addEventListener('click', () => {
-    elements.formLogin.style.display = 'none';
-    elements.formRegister.style.display = 'block';
-    elements.tabAuthRegister.classList.add('active');
-    elements.tabAuthLogin.classList.remove('active');
+    if (elements.formLogin) elements.formLogin.style.display = 'none';
+    if (elements.formRegister) elements.formRegister.style.display = 'block';
+    elements.tabAuthRegister?.classList.add('active');
+    elements.tabAuthLogin?.classList.remove('active');
   });
 
   elements.formLogin?.addEventListener('submit', async (e) => {
@@ -855,7 +824,7 @@ function renderAdminUserList() {
     const p = document.getElementById('loginPassword').value;
     const res = await loginUser(u, p);
     if (res.success) {
-      elements.modalAuth.classList.remove('active');
+      elements.modalAuth?.classList.remove('active');
       renderAll();
       showToast(`Welcome back, ${res.user.name}!`);
     } else {
@@ -871,7 +840,7 @@ function renderAdminUserList() {
     const avatar = state.selectedRegAvatar || '🏈';
     const res = await registerUser(name, u, p, avatar);
     if (res.success) {
-      elements.modalAuth.classList.remove('active');
+      elements.modalAuth?.classList.remove('active');
       renderAll();
       showToast(`Account created! Welcome, ${res.user.name}!`);
     } else {
@@ -892,10 +861,9 @@ function renderAdminUserList() {
       return;
     }
     renderAdminUserList();
-    elements.modalAdmin.classList.add('active');
+    elements.modalAdmin?.classList.add('active');
   });
 
-  // Admin User List Delegation
   elements.adminUserList?.addEventListener('click', async (e) => {
     const resetBtn = e.target.closest('.btn-admin-reset');
     const roleBtn = e.target.closest('.btn-admin-role');
@@ -939,7 +907,6 @@ function renderAdminUserList() {
     }
   });
 
-  // Admin Add User Form
   elements.formAdminAddUser?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('adminNewName').value;
@@ -960,7 +927,6 @@ function renderAdminUserList() {
     }
   });
 
-  // Avatar Selection in Register Form
   document.getElementById('regAvatarOptions')?.addEventListener('click', (e) => {
     if (e.target.classList.contains('reg-avatar-opt')) {
       document.querySelectorAll('.reg-avatar-opt').forEach(opt => opt.style.transform = 'scale(1)');
@@ -970,39 +936,51 @@ function renderAdminUserList() {
   });
 
   // Modal Triggers
-  elements.btnAddPlayer.addEventListener('click', () => elements.modalAddPlayer.classList.add('active'));
-  elements.btnManagePlayers.addEventListener('click', () => {
-    renderManagePlayersList();
-    elements.modalManagePlayers.classList.add('active');
+  elements.btnRules?.addEventListener('click', () => elements.modalRules?.classList.add('active'));
+  elements.btnExportImport?.addEventListener('click', () => elements.modalExportImport?.classList.add('active'));
+
+  elements.btnShareLeaderboard?.addEventListener('click', () => {
+    const standings = calculateStandings(state.league.players, state.league.schedule);
+    let summaryText = `🏆 ${state.league.leagueName} Standings 🏆\n\n`;
+    standings.forEach(p => {
+      summaryText += `${p.rank}. ${p.avatar} ${p.name} - ${p.totalPoints} pts (${p.accuracyPct}% acc)\n`;
+    });
+    summaryText += `\nPlay NFL Blowout Pick'em on GitHub Pages!`;
+
+    navigator.clipboard.writeText(summaryText).then(() => {
+      showToast('Standings copied to clipboard!');
+    });
   });
-  elements.btnRules.addEventListener('click', () => elements.modalRules.classList.add('active'));
-  elements.btnExportImport.addEventListener('click', () => elements.modalExportImport.classList.add('active'));
 
-  // Delete Player Event Delegation
-  elements.managePlayersList.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-delete-player');
-    if (!btn) return;
+  elements.btnExportFile?.addEventListener('click', () => {
+    exportLeagueJson(state.league);
+  });
 
-    const playerId = btn.dataset.playerId;
-    const targetPlayer = state.league.players.find(p => p.id === playerId);
+  elements.inputImportFile?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    if (state.league.players.length <= 1) {
-      showToast('Cannot delete the last remaining player!', 'error');
-      return;
-    }
-
-    if (confirm(`Are you sure you want to remove "${targetPlayer?.name}" from the league?`)) {
-      state.league.players = state.league.players.filter(p => p.id !== playerId);
-      
-      // If deleted player was active, switch active to first player
-      if (state.league.activePlayerId === playerId) {
-        state.league.activePlayerId = state.league.players[0].id;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const res = importLeagueJson(event.target.result);
+      if (res.success) {
+        state.league = res.data;
+        renderAll();
+        showToast('League data successfully imported!');
+        elements.modalExportImport?.classList.remove('active');
+      } else {
+        showToast(`Import error: ${res.error}`, 'error');
       }
+    };
+    reader.readAsText(file);
+  });
 
-      saveLeagueData(state.league);
-      renderManagePlayersList();
+  elements.btnResetLeague?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to reset the league to default settings?')) {
+      state.league = resetToDefaultLeague();
       renderAll();
-      showToast(`Removed ${targetPlayer?.name} from the league.`);
+      showToast('League reset to defaults!');
+      elements.modalExportImport?.classList.remove('active');
     }
   });
 
@@ -1010,38 +988,5 @@ function renderAdminUserList() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     });
-  });
-
-  // Avatar Selection in Modal
-  document.getElementById('avatarOptions').addEventListener('click', (e) => {
-    if (e.target.classList.contains('avatar-opt')) {
-      document.querySelectorAll('.avatar-opt').forEach(opt => opt.style.transform = 'scale(1)');
-      e.target.style.transform = 'scale(1.4)';
-      state.selectedAvatar = e.target.textContent;
-    }
-  });
-
-  // Add Player Form Submit
-  document.getElementById('formAddPlayer').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const nameInput = document.getElementById('inputPlayerName');
-    const name = nameInput.value.trim();
-    if (!name) return;
-
-    const newPlayer = {
-      id: `p_${Date.now()}`,
-      name,
-      avatar: state.selectedAvatar || '🏈',
-      picks: {}
-    };
-
-    state.league.players.push(newPlayer);
-    state.league.activePlayerId = newPlayer.id;
-    saveLeagueData(state.league);
-
-    nameInput.value = '';
-    elements.modalAddPlayer.classList.remove('active');
-    renderAll();
-    showToast(`Added ${newPlayer.name} to the league!`);
   });
 }
