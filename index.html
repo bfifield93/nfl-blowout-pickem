@@ -24,18 +24,30 @@
       </div>
 
       <div class="header-actions">
-        <!-- Player Switcher -->
-        <div class="player-select-wrapper">
-          <span class="player-select-label">Active Player:</span>
-          <select id="playerDropdown" class="player-dropdown"></select>
+        <!-- Auth User Badge (when signed in) -->
+        <div id="userProfileBadge" class="player-select-wrapper" style="display: none;">
+          <span id="userAvatar" style="font-size: 1.2rem;">👑</span>
+          <div style="display: flex; flex-direction: column;">
+            <span id="userNameText" style="font-weight: 800; font-size: 0.85rem; color: #FFF;">Admin</span>
+            <span id="userRoleBadge" style="font-size: 0.65rem; font-weight: 800; color: var(--color-green);">ADMIN</span>
+          </div>
         </div>
 
-        <button id="btnAddPlayer" class="btn btn-secondary" title="Add a new player to the league">
-          <span>➕ Add Player</span>
+        <!-- Auth Buttons -->
+        <button id="btnSignIn" class="btn btn-primary" style="display: inline-flex;">
+          <span>🔐 Sign In</span>
         </button>
 
-        <button id="btnManagePlayers" class="btn btn-secondary" title="Manage & Remove Players">
-          <span>⚙️ Players</span>
+        <button id="btnRegister" class="btn btn-secondary" style="display: inline-flex;">
+          <span>📝 Register</span>
+        </button>
+
+        <button id="btnAdminPanel" class="btn btn-secondary" style="display: none; border-color: var(--color-gold); color: var(--color-gold);" title="Open Admin User Control Panel">
+          <span>⚙️ Admin Panel</span>
+        </button>
+
+        <button id="btnSignOut" class="btn btn-secondary" style="display: none;" title="Sign out of account">
+          <span>🚪 Sign Out</span>
         </button>
 
         <button id="btnRules" class="btn btn-secondary" title="View League Rules">
@@ -203,18 +215,99 @@
     </div>
   </div>
 
-  <!-- Manage & Delete Players Modal -->
-  <div id="modalManagePlayers" class="modal-overlay">
-    <div class="modal-content">
+  <!-- Sign In / Register Modal -->
+  <div id="modalAuth" class="modal-overlay">
+    <div class="modal-content" style="max-width: 440px;">
       <div class="modal-header">
-        <h3 class="modal-title">⚙️ Manage & Remove Players</h3>
+        <h3 id="authModalTitle" class="modal-title">🔐 Sign In to Your Account</h3>
         <button class="close-modal btn-icon">✕</button>
       </div>
+
+      <!-- Mode Selector Tabs -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <button id="tabAuthLogin" class="btn btn-secondary active" style="flex: 1; justify-content: center;">Sign In</button>
+        <button id="tabAuthRegister" class="btn btn-secondary" style="flex: 1; justify-content: center;">Create Account</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="formLogin">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Username</label>
+          <input type="text" id="loginUsername" placeholder="Enter username" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter password" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+
+        <div style="background: rgba(255,184,28,0.1); border: 1px solid rgba(255,184,28,0.3); padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.75rem; color: var(--color-gold); margin-bottom: 20px;">
+          💡 <strong>Default Admin Credentials:</strong> Username: <code>admin</code> | Password: <code>admin123</code>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Sign In</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="formRegister" style="display: none;">
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Display Name</label>
+          <input type="text" id="regName" placeholder="e.g. Marcus" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Username</label>
+          <input type="text" id="regUsername" placeholder="Choose a username" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Password</label>
+          <input type="password" id="regPassword" placeholder="Create a password" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Avatar Emoji</label>
+          <div style="display: flex; gap: 10px; font-size: 1.5rem;" id="regAvatarOptions">
+            <span class="reg-avatar-opt" style="cursor: pointer;">🏈</span>
+            <span class="reg-avatar-opt" style="cursor: pointer;">⚡</span>
+            <span class="reg-avatar-opt" style="cursor: pointer;">🔥</span>
+            <span class="reg-avatar-opt" style="cursor: pointer;">🎯</span>
+            <span class="reg-avatar-opt" style="cursor: pointer;">🦁</span>
+            <span class="reg-avatar-opt" style="cursor: pointer;">👑</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Create Account & Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Control Panel Modal -->
+  <div id="modalAdmin" class="modal-overlay">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Admin User Management</h3>
+        <button class="close-modal btn-icon">✕</button>
+      </div>
+
       <div>
         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
-          Remove inactive participants from the league. (At least 1 player must remain).
+          As Commissioner Admin, you can edit user details, reset passwords, change roles, or remove accounts.
         </p>
-        <div id="managePlayersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+        <div id="adminUserList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;"></div>
+
+        <div style="border-top: 1px solid var(--border-color); padding-top: 20px;">
+          <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 12px;">➕ Add New User (Admin Override)</h4>
+          <form id="formAdminAddUser" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input type="text" id="adminNewName" placeholder="Full Name" required style="padding: 8px 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #FFF;">
+            <input type="text" id="adminNewUsername" placeholder="Username" required style="padding: 8px 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #FFF;">
+            <input type="password" id="adminNewPassword" placeholder="Password" required style="padding: 8px 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #FFF;">
+            <select id="adminNewRole" style="padding: 8px 12px; border-radius: var(--radius-md); background: #111827; border: 1px solid var(--border-color); color: #FFF;">
+              <option value="USER">User Role</option>
+              <option value="ADMIN">Admin Role</option>
+            </select>
+            <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; justify-content: center;">
+              Create User Account
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>

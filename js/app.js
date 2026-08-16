@@ -19,12 +19,23 @@ import {
 } from './storage.js';
 import { simulateWeekScores, updateGameScore } from './mockScores.js';
 import { fetchLiveNflScores, mergeLiveGamesIntoSchedule } from './nflApi.js';
+import {
+  getAccounts,
+  getCurrentUser,
+  loginUser,
+  registerUser,
+  logoutUser,
+  isAdmin,
+  adminUpdateUser,
+  adminDeleteUser
+} from './auth.js';
 
 // Application State
 let state = {
   league: loadLeagueData(),
   currentWeek: 1,
-  selectedAvatar: '🏈'
+  selectedAvatar: '🏈',
+  selectedRegAvatar: '🏈'
 };
 
 // DOM Element Selectors
@@ -47,16 +58,29 @@ const elements = {
   scoreEditorGrid: document.getElementById('scoreEditorGrid'),
   toastContainer: document.getElementById('toastContainer'),
   
+  // Auth & Admin elements
+  userProfileBadge: document.getElementById('userProfileBadge'),
+  userAvatar: document.getElementById('userAvatar'),
+  userNameText: document.getElementById('userNameText'),
+  userRoleBadge: document.getElementById('userRoleBadge'),
+  btnSignIn: document.getElementById('btnSignIn'),
+  btnRegister: document.getElementById('btnRegister'),
+  btnAdminPanel: document.getElementById('btnAdminPanel'),
+  btnSignOut: document.getElementById('btnSignOut'),
+  modalAuth: document.getElementById('modalAuth'),
+  modalAdmin: document.getElementById('modalAdmin'),
+  adminUserList: document.getElementById('adminUserList'),
+  formLogin: document.getElementById('formLogin'),
+  formRegister: document.getElementById('formRegister'),
+  formAdminAddUser: document.getElementById('formAdminAddUser'),
+  tabAuthLogin: document.getElementById('tabAuthLogin'),
+  tabAuthRegister: document.getElementById('tabAuthRegister'),
+  
   // Modals
-  modalAddPlayer: document.getElementById('modalAddPlayer'),
-  modalManagePlayers: document.getElementById('modalManagePlayers'),
   modalRules: document.getElementById('modalRules'),
   modalExportImport: document.getElementById('modalExportImport'),
-  managePlayersList: document.getElementById('managePlayersList'),
   
   // Buttons
-  btnAddPlayer: document.getElementById('btnAddPlayer'),
-  btnManagePlayers: document.getElementById('btnManagePlayers'),
   btnRules: document.getElementById('btnRules'),
   btnLiveSync: document.getElementById('btnLiveSync'),
   btnExportImport: document.getElementById('btnExportImport'),
@@ -92,24 +116,65 @@ async function autoSyncWeekSchedule(weekNum) {
 }
 
 function getActivePlayer() {
+  syncAccountsWithPlayers();
   const activeId = state.league.activePlayerId;
   return state.league.players.find(p => p.id === activeId) || state.league.players[0];
 }
 
-function showToast(message, type = 'success') {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  if (type === 'error') {
-    toast.style.borderColor = 'var(--color-red)';
+function syncAccountsWithPlayers() {
+  const accounts = getAccounts();
+  const players = state.league.players;
+
+  accounts.forEach(acc => {
+    let player = players.find(p => p.id === acc.id);
+    if (!player) {
+      player = { id: acc.id, name: acc.name, avatar: acc.avatar, picks: {} };
+      players.push(player);
+    } else {
+      player.name = acc.name;
+      player.avatar = acc.avatar;
+    }
+  });
+
+  const currentUser = getCurrentUser();
+  if (currentUser) {
+    state.league.activePlayerId = currentUser.userId;
+  } else if (!state.league.activePlayerId && players.length > 0) {
+    state.league.activePlayerId = players[0].id;
   }
-  toast.textContent = message;
-  elements.toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.remove();
-  }, 3200);
+}
+
+function renderAuthHeader() {
+  const currentUser = getCurrentUser();
+
+  if (currentUser) {
+    elements.userProfileBadge.style.display = 'flex';
+    elements.userAvatar.textContent = currentUser.avatar || '🏈';
+    elements.userNameText.textContent = currentUser.name;
+    elements.userRoleBadge.textContent = currentUser.role;
+    elements.userRoleBadge.style.color = currentUser.role === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-green)';
+
+    elements.btnSignIn.style.display = 'none';
+    elements.btnRegister.style.display = 'none';
+    elements.btnSignOut.style.display = 'inline-flex';
+
+    if (currentUser.role === 'ADMIN') {
+      elements.btnAdminPanel.style.display = 'inline-flex';
+    } else {
+      elements.btnAdminPanel.style.display = 'none';
+    }
+  } else {
+    elements.userProfileBadge.style.display = 'none';
+    elements.btnSignIn.style.display = 'inline-flex';
+    elements.btnRegister.style.display = 'inline-flex';
+    elements.btnSignOut.style.display = 'none';
+    elements.btnAdminPanel.style.display = 'none';
+  }
 }
 
 function renderAll() {
+  syncAccountsWithPlayers();
+  renderAuthHeader();
   renderPlayerDropdowns();
   renderWeekCarousel();
   renderMatchups();
@@ -519,9 +584,21 @@ function setupEventListeners() {
     const btn = e.target.closest('.btn-pick');
     if (!btn || btn.disabled) return;
 
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      showToast('🔐 Please sign in to your account to make picks!', 'error');
+      elements.modalAuth.classList.add('active');
+      return;
+    }
+
+    const activePlayer = getActivePlayer();
+    if (!isAdmin() && activePlayer.id !== currentUser.userId) {
+      showToast(`🔐 You can only make picks for your own account (${currentUser.name})!`, 'error');
+      return;
+    }
+
     const teamId = btn.dataset.team;
     const pickType = btn.dataset.type; // 'WINNER' or 'LOSER'
-    const activePlayer = getActivePlayer();
 
     if (!activePlayer.picks) activePlayer.picks = {};
     if (!activePlayer.picks[`week${state.currentWeek}`]) {
@@ -705,6 +782,192 @@ function renderManagePlayersList() {
     `;
   }).join('');
 }
+
+/* -------------------------------------------------------------------------- */
+/* Admin Control Panel Renderer                                              */
+/* -------------------------------------------------------------------------- */
+
+function renderAdminUserList() {
+  if (!elements.adminUserList) return;
+
+  const accounts = getAccounts();
+  elements.adminUserList.innerHTML = accounts.map(acc => {
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.4rem;">${acc.avatar}</span>
+          <div>
+            <div style="font-weight: 800; font-size: 0.95rem;">${acc.name} <span style="font-size: 0.75rem; color: var(--text-muted);">(@${acc.username})</span></div>
+            <span style="font-size: 0.65rem; font-weight: 800; color: ${acc.role === 'ADMIN' ? 'var(--color-gold)' : 'var(--color-green)'};">${acc.role}</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-admin-reset" data-user-id="${acc.id}" style="padding: 4px 10px; font-size: 0.75rem;">
+            🔑 Reset Pass
+          </button>
+          <button class="btn btn-secondary btn-admin-role" data-user-id="${acc.id}" style="padding: 4px 10px; font-size: 0.75rem;">
+            ${acc.role === 'ADMIN' ? 'Demote User' : 'Promote Admin'}
+          </button>
+          <button class="btn btn-secondary btn-admin-delete" data-user-id="${acc.id}" style="color: var(--color-red); border-color: rgba(239,68,68,0.3); padding: 4px 10px; font-size: 0.75rem;">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+  // Auth Event Handlers
+  elements.btnSignIn?.addEventListener('click', () => {
+    elements.formLogin.style.display = 'block';
+    elements.formRegister.style.display = 'none';
+    elements.tabAuthLogin.classList.add('active');
+    elements.tabAuthRegister.classList.remove('active');
+    elements.modalAuth.classList.add('active');
+  });
+
+  elements.btnRegister?.addEventListener('click', () => {
+    elements.formLogin.style.display = 'none';
+    elements.formRegister.style.display = 'block';
+    elements.tabAuthRegister.classList.add('active');
+    elements.tabAuthLogin.classList.remove('active');
+    elements.modalAuth.classList.add('active');
+  });
+
+  elements.tabAuthLogin?.addEventListener('click', () => {
+    elements.formLogin.style.display = 'block';
+    elements.formRegister.style.display = 'none';
+    elements.tabAuthLogin.classList.add('active');
+    elements.tabAuthRegister.classList.remove('active');
+  });
+
+  elements.tabAuthRegister?.addEventListener('click', () => {
+    elements.formLogin.style.display = 'none';
+    elements.formRegister.style.display = 'block';
+    elements.tabAuthRegister.classList.add('active');
+    elements.tabAuthLogin.classList.remove('active');
+  });
+
+  elements.formLogin?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const u = document.getElementById('loginUsername').value;
+    const p = document.getElementById('loginPassword').value;
+    const res = await loginUser(u, p);
+    if (res.success) {
+      elements.modalAuth.classList.remove('active');
+      renderAll();
+      showToast(`Welcome back, ${res.user.name}!`);
+    } else {
+      showToast(res.error, 'error');
+    }
+  });
+
+  elements.formRegister?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('regName').value;
+    const u = document.getElementById('regUsername').value;
+    const p = document.getElementById('regPassword').value;
+    const avatar = state.selectedRegAvatar || '🏈';
+    const res = await registerUser(name, u, p, avatar);
+    if (res.success) {
+      elements.modalAuth.classList.remove('active');
+      renderAll();
+      showToast(`Account created! Welcome, ${res.user.name}!`);
+    } else {
+      showToast(res.error, 'error');
+    }
+  });
+
+  elements.btnSignOut?.addEventListener('click', () => {
+    logoutUser();
+    renderAll();
+    showToast('Signed out of account.');
+  });
+
+  // Admin Control Panel Handlers
+  elements.btnAdminPanel?.addEventListener('click', () => {
+    if (!isAdmin()) {
+      showToast('Admin privileges required.', 'error');
+      return;
+    }
+    renderAdminUserList();
+    elements.modalAdmin.classList.add('active');
+  });
+
+  // Admin User List Delegation
+  elements.adminUserList?.addEventListener('click', async (e) => {
+    const resetBtn = e.target.closest('.btn-admin-reset');
+    const roleBtn = e.target.closest('.btn-admin-role');
+    const deleteBtn = e.target.closest('.btn-admin-delete');
+
+    if (resetBtn) {
+      const userId = resetBtn.dataset.userId;
+      const newPass = prompt('Enter new password for this user:');
+      if (newPass && newPass.length >= 4) {
+        const res = await adminUpdateUser(userId, { password: newPass });
+        if (res.success) showToast('Password reset successfully!');
+        else showToast(res.error, 'error');
+      }
+    } else if (roleBtn) {
+      const userId = roleBtn.dataset.userId;
+      const accounts = getAccounts();
+      const target = accounts.find(a => a.id === userId);
+      const newRole = target.role === 'ADMIN' ? 'USER' : 'ADMIN';
+      const res = await adminUpdateUser(userId, { role: newRole });
+      if (res.success) {
+        renderAdminUserList();
+        renderAll();
+        showToast(`User role updated to ${newRole}`);
+      } else {
+        showToast(res.error, 'error');
+      }
+    } else if (deleteBtn) {
+      const userId = deleteBtn.dataset.userId;
+      if (confirm('Are you sure you want to delete this user account?')) {
+        const res = adminDeleteUser(userId);
+        if (res.success) {
+          state.league.players = state.league.players.filter(p => p.id !== userId);
+          saveLeagueData(state.league);
+          renderAdminUserList();
+          renderAll();
+          showToast('User account deleted.');
+        } else {
+          showToast(res.error, 'error');
+        }
+      }
+    }
+  });
+
+  // Admin Add User Form
+  elements.formAdminAddUser?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('adminNewName').value;
+    const u = document.getElementById('adminNewUsername').value;
+    const p = document.getElementById('adminNewPassword').value;
+    const role = document.getElementById('adminNewRole').value;
+
+    const res = await registerUser(name, u, p, '🏈', role);
+    if (res.success) {
+      document.getElementById('adminNewName').value = '';
+      document.getElementById('adminNewUsername').value = '';
+      document.getElementById('adminNewPassword').value = '';
+      renderAdminUserList();
+      renderAll();
+      showToast(`User account created for ${name}!`);
+    } else {
+      showToast(res.error, 'error');
+    }
+  });
+
+  // Avatar Selection in Register Form
+  document.getElementById('regAvatarOptions')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('reg-avatar-opt')) {
+      document.querySelectorAll('.reg-avatar-opt').forEach(opt => opt.style.transform = 'scale(1)');
+      e.target.style.transform = 'scale(1.4)';
+      state.selectedRegAvatar = e.target.textContent;
+    }
+  });
 
   // Modal Triggers
   elements.btnAddPlayer.addEventListener('click', () => elements.modalAddPlayer.classList.add('active'));
