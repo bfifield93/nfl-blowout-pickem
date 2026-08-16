@@ -117,22 +117,22 @@ async function autoSyncWeekSchedule(weekNum) {
 
 function getActivePlayer() {
   syncAccountsWithPlayers();
-  const activeId = state.league.activePlayerId;
-  return state.league.players.find(p => p.id === activeId) || state.league.players[0];
-}
-
-function showToast(message, type = 'success') {
-  if (!elements.toastContainer) return;
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  if (type === 'error') {
-    toast.style.borderColor = 'var(--color-red)';
+  const currentUser = getCurrentUser();
+  
+  if (currentUser && !isAdmin()) {
+    state.league.activePlayerId = currentUser.userId;
   }
-  toast.textContent = message;
-  elements.toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.remove();
-  }, 3200);
+
+  const activeId = state.league.activePlayerId;
+  let player = state.league.players.find(p => p.id === activeId);
+
+  if (!player && currentUser) {
+    player = { id: currentUser.userId, name: currentUser.name, avatar: currentUser.avatar, picks: {} };
+    state.league.players.push(player);
+    state.league.activePlayerId = currentUser.userId;
+  }
+
+  return player || state.league.players[0];
 }
 
 function syncAccountsWithPlayers() {
@@ -151,7 +151,7 @@ function syncAccountsWithPlayers() {
   });
 
   const currentUser = getCurrentUser();
-  if (currentUser) {
+  if (currentUser && !isAdmin()) {
     state.league.activePlayerId = currentUser.userId;
   } else if (!state.league.activePlayerId && players.length > 0) {
     state.league.activePlayerId = players[0].id;
@@ -675,11 +675,10 @@ function setupEventListeners() {
       return;
     }
 
-    const activePlayer = getActivePlayer();
-    if (!isAdmin() && activePlayer.id !== currentUser.userId) {
-      showToast(`🔐 You can only make picks for your own account (${currentUser.name})!`, 'error');
-      return;
+    if (!isAdmin()) {
+      state.league.activePlayerId = currentUser.userId;
     }
+    const activePlayer = getActivePlayer();
 
     const teamId = btn.dataset.team;
     const pickType = btn.dataset.type; // 'WINNER' or 'LOSER'
