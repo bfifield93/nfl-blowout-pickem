@@ -13,6 +13,13 @@ import {
 import {
   loadLeagueData,
   saveLeagueData,
+  getAllLeagues,
+  getActiveLeagueId,
+  setActiveLeagueId,
+  createNewLeague,
+  joinLeagueByCode,
+  getUserLeagues,
+  isLeagueAdmin,
   exportLeagueJson,
   importLeagueJson,
   resetToDefaultLeague
@@ -58,6 +65,18 @@ const elements = {
   scoreEditorGrid: document.getElementById('scoreEditorGrid'),
   toastContainer: document.getElementById('toastContainer'),
   
+  // Multi-League elements
+  leagueDropdown: document.getElementById('leagueDropdown'),
+  btnOpenLeagueHub: document.getElementById('btnOpenLeagueHub'),
+  modalLeagueHub: document.getElementById('modalLeagueHub'),
+  formCreateLeague: document.getElementById('formCreateLeague'),
+  formJoinLeague: document.getElementById('formJoinLeague'),
+  containerMyLeagues: document.getElementById('containerMyLeagues'),
+  myLeaguesList: document.getElementById('myLeaguesList'),
+  tabLeagueCreate: document.getElementById('tabLeagueCreate'),
+  tabLeagueJoin: document.getElementById('tabLeagueJoin'),
+  tabLeagueMy: document.getElementById('tabLeagueMy'),
+
   // Auth & Admin elements
   userProfileBadge: document.getElementById('userProfileBadge'),
   userAvatar: document.getElementById('userAvatar'),
@@ -184,11 +203,50 @@ function renderAuthHeader() {
     if (elements.btnSignOut) elements.btnSignOut.style.display = 'none';
     if (elements.btnAdminPanel) elements.btnAdminPanel.style.display = 'none';
   }
+function renderLeagueDropdown() {
+  if (!elements.leagueDropdown) return;
+  const currentUser = getCurrentUser();
+  const userLeagues = getUserLeagues(currentUser?.userId);
+
+  elements.leagueDropdown.innerHTML = userLeagues.map(l => {
+    return `<option value="${l.id}" ${l.id === state.league.id ? 'selected' : ''}>🏆 ${l.leagueName}</option>`;
+  }).join('');
+}
+
+function renderMyLeaguesList() {
+  if (!elements.myLeaguesList) return;
+  const currentUser = getCurrentUser();
+  const userLeagues = getUserLeagues(currentUser?.userId);
+
+  elements.myLeaguesList.innerHTML = userLeagues.map(l => {
+    const isCreator = l.adminUserId === currentUser?.userId || isAdmin();
+    const isActive = l.id === state.league.id;
+
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div>
+          <div style="font-weight: 800; font-size: 1rem; color: #FFF;">
+            ${l.leagueName}
+            ${isActive ? '<span style="font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,255,135,0.15); color: var(--color-green); margin-left: 6px;">ACTIVE</span>' : ''}
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+            Invite Code: <strong style="color: var(--color-gold);">${l.joinCode}</strong> • Members: ${l.players?.length || 1}
+            ${isCreator ? ' • <span style="color: var(--color-green); font-weight: 800;">COMMISSIONER</span>' : ''}
+          </div>
+        </div>
+
+        <button class="btn btn-secondary btn-switch-league" data-league-id="${l.id}" style="padding: 6px 12px; font-size: 0.8rem;" ${isActive ? 'disabled' : ''}>
+          ${isActive ? 'Selected' : 'Switch'}
+        </button>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderAll() {
   syncAccountsWithPlayers();
   renderAuthHeader();
+  renderLeagueDropdown();
   renderPlayerDropdowns();
   renderWeekCarousel();
   renderMatchups();
@@ -598,6 +656,113 @@ function renderAdminUserList() {
 /* -------------------------------------------------------------------------- */
 
 function setupEventListeners() {
+  // League Hub Event Handlers
+  elements.leagueDropdown?.addEventListener('change', (e) => {
+    const selectedLeagueId = e.target.value;
+    setActiveLeagueId(selectedLeagueId);
+    state.league = loadLeagueData();
+    renderAll();
+    showToast(`Switched to league: ${state.league.leagueName}`);
+  });
+
+  elements.btnOpenLeagueHub?.addEventListener('click', () => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      showToast('🔐 Please sign in to create or join leagues!', 'error');
+      elements.modalAuth?.classList.add('active');
+      return;
+    }
+    renderMyLeaguesList();
+    elements.modalLeagueHub?.classList.add('active');
+  });
+
+  elements.tabLeagueCreate?.addEventListener('click', () => {
+    if (elements.formCreateLeague) elements.formCreateLeague.style.display = 'block';
+    if (elements.formJoinLeague) elements.formJoinLeague.style.display = 'none';
+    if (elements.containerMyLeagues) elements.containerMyLeagues.style.display = 'none';
+    elements.tabLeagueCreate?.classList.add('active');
+    elements.tabLeagueJoin?.classList.remove('active');
+    elements.tabLeagueMy?.classList.remove('active');
+  });
+
+  elements.tabLeagueJoin?.addEventListener('click', () => {
+    if (elements.formCreateLeague) elements.formCreateLeague.style.display = 'none';
+    if (elements.formJoinLeague) elements.formJoinLeague.style.display = 'block';
+    if (elements.containerMyLeagues) elements.containerMyLeagues.style.display = 'none';
+    elements.tabLeagueJoin?.classList.add('active');
+    elements.tabLeagueCreate?.classList.remove('active');
+    elements.tabLeagueMy?.classList.remove('active');
+  });
+
+  elements.tabLeagueMy?.addEventListener('click', () => {
+    if (elements.formCreateLeague) elements.formCreateLeague.style.display = 'none';
+    if (elements.formJoinLeague) elements.formJoinLeague.style.display = 'none';
+    if (elements.containerMyLeagues) elements.containerMyLeagues.style.display = 'block';
+    elements.tabLeagueMy?.classList.add('active');
+    elements.tabLeagueCreate?.classList.remove('active');
+    elements.tabLeagueJoin?.classList.remove('active');
+    renderMyLeaguesList();
+  });
+
+  elements.formCreateLeague?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      showToast('🔐 Please sign in first!', 'error');
+      elements.modalAuth?.classList.add('active');
+      return;
+    }
+
+    const name = document.getElementById('createLeagueName').value;
+    const code = document.getElementById('createLeagueCode').value;
+
+    const res = createNewLeague(name, code, currentUser);
+    if (res.success) {
+      state.league = res.league;
+      elements.modalLeagueHub?.classList.remove('active');
+      document.getElementById('createLeagueName').value = '';
+      document.getElementById('createLeagueCode').value = '';
+      renderAll();
+      showToast(`🏆 Created & launched "${res.league.leagueName}"! You are Commissioner.`);
+    } else {
+      showToast(res.error, 'error');
+    }
+  });
+
+  elements.formJoinLeague?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      showToast('🔐 Please sign in first!', 'error');
+      elements.modalAuth?.classList.add('active');
+      return;
+    }
+
+    const code = document.getElementById('joinLeagueCode').value;
+    const res = joinLeagueByCode(code, currentUser);
+    if (res.success) {
+      state.league = res.league;
+      elements.modalLeagueHub?.classList.remove('active');
+      document.getElementById('joinLeagueCode').value = '';
+      renderAll();
+      showToast(`🏆 Joined "${res.league.leagueName}"!`);
+    } else {
+      showToast(res.error, 'error');
+    }
+  });
+
+  elements.containerMyLeagues?.addEventListener('click', (e) => {
+    const switchBtn = e.target.closest('.btn-switch-league');
+    if (!switchBtn) return;
+
+    const leagueId = switchBtn.dataset.leagueId;
+    setActiveLeagueId(leagueId);
+    state.league = loadLeagueData();
+    elements.modalLeagueHub?.classList.remove('active');
+    renderAll();
+    showToast(`Switched to league: ${state.league.leagueName}`);
+  });
+
   // Navigation Tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {

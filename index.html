@@ -42,6 +42,16 @@
           <span>📝 Register</span>
         </button>
 
+        <!-- Multi-League Selector -->
+        <div class="player-select-wrapper" style="border-color: rgba(255,184,28,0.4);">
+          <span class="player-select-label" style="color: var(--color-gold);">🏆 League:</span>
+          <select id="leagueDropdown" class="player-dropdown" style="color: var(--color-gold); font-weight: 800; max-width: 160px;"></select>
+        </div>
+
+        <button id="btnOpenLeagueHub" class="btn btn-secondary" style="border-color: var(--color-gold); color: var(--color-gold);" title="Create a new league or join via invite code">
+          <span>➕ League Hub</span>
+        </button>
+
         <button id="btnAdminPanel" class="btn btn-secondary" style="display: none; border-color: var(--color-gold); color: var(--color-gold);" title="Open Admin User Control Panel">
           <span>⚙️ Admin Panel</span>
         </button>
@@ -212,6 +222,56 @@
           <button type="submit" class="btn btn-primary">Save Player</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Multi-League Creation & Join Hub Modal -->
+  <div id="modalLeagueHub" class="modal-overlay">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🏆 League Hub</h3>
+        <button class="close-modal btn-icon">✕</button>
+      </div>
+
+      <!-- Tabs -->
+      <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <button id="tabLeagueCreate" class="btn btn-secondary active" style="flex: 1; justify-content: center;">➕ Create League</button>
+        <button id="tabLeagueJoin" class="btn btn-secondary" style="flex: 1; justify-content: center;">🔑 Join via Code</button>
+        <button id="tabLeagueMy" class="btn btn-secondary" style="flex: 1; justify-content: center;">📋 My Leagues</button>
+      </div>
+
+      <!-- Create League Form -->
+      <form id="formCreateLeague">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">League Name</label>
+          <input type="text" id="createLeagueName" placeholder="e.g. Sunday Football Pool 2026" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Invite Join Code (for friends)</label>
+          <input type="text" id="createLeagueCode" placeholder="e.g. SUNDAY26" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; text-transform: uppercase;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">Friends will use this code to join your league!</span>
+        </div>
+
+        <div style="background: rgba(0,255,135,0.1); border: 1px solid rgba(0,255,135,0.3); padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.75rem; color: var(--color-green); margin-bottom: 20px;">
+          👑 You will automatically become the <strong>Commissioner Admin</strong> of this league!
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Create & Launch League</button>
+      </form>
+
+      <!-- Join League Form -->
+      <form id="formJoinLeague" style="display: none;">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Enter Join Code</label>
+          <input type="text" id="joinLeagueCode" placeholder="e.g. BLOWOUT2026" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; text-transform: uppercase; font-size: 1.1rem; font-weight: 800; text-align: center;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Join League</button>
+      </form>
+
+      <!-- My Leagues List -->
+      <div id="containerMyLeagues" style="display: none;">
+        <div id="myLeaguesList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
     </div>
   </div>
 
