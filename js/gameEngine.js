@@ -34,8 +34,11 @@ export function calculatePickScore(teamId, pickType, game) {
   
   if (pickType === 'WINNER') {
     const isWin = teamScore > oppScore;
+    const isTie = teamScore === oppScore;
+    const points = isTie ? 0 : (isWin ? margin : -margin);
+
     return {
-      points: isWin ? margin : 0,
+      points,
       margin,
       status: 'COMPLETED',
       isCorrect: isWin,
@@ -44,8 +47,11 @@ export function calculatePickScore(teamId, pickType, game) {
     };
   } else if (pickType === 'LOSER') {
     const isLoss = teamScore < oppScore;
+    const isTie = teamScore === oppScore;
+    const points = isTie ? 0 : (isLoss ? margin : -margin);
+
     return {
-      points: isLoss ? margin : 0,
+      points,
       margin,
       status: 'COMPLETED',
       isCorrect: isLoss,

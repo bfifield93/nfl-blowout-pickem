@@ -291,10 +291,13 @@ function renderPicksSummary() {
     elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
 
     if (scoreRes.status === 'COMPLETED') {
-      elements.singlePickPts.textContent = `+${scoreRes.points} pts`;
+      const ptsPrefix = scoreRes.points > 0 ? '+' : '';
+      elements.singlePickPts.textContent = `${ptsPrefix}${scoreRes.points} pts`;
+      elements.singlePickPts.style.color = scoreRes.points < 0 ? 'var(--color-red)' : 'var(--color-gold)';
       totalPts = scoreRes.points;
     } else {
       elements.singlePickPts.textContent = 'Pending';
+      elements.singlePickPts.style.color = 'var(--color-gold)';
     }
   } else if (currentWeekPicks.loserTeamId) {
     const team = NFL_TEAMS[currentWeekPicks.loserTeamId] || { name: currentWeekPicks.loserTeamId, city: '' };
@@ -307,10 +310,13 @@ function renderPicksSummary() {
     elements.singlePickTeam.textContent = `${team.city} ${team.name}`;
 
     if (scoreRes.status === 'COMPLETED') {
-      elements.singlePickPts.textContent = `+${scoreRes.points} pts`;
+      const ptsPrefix = scoreRes.points > 0 ? '+' : '';
+      elements.singlePickPts.textContent = `${ptsPrefix}${scoreRes.points} pts`;
+      elements.singlePickPts.style.color = scoreRes.points < 0 ? 'var(--color-red)' : 'var(--color-gold)';
       totalPts = scoreRes.points;
     } else {
       elements.singlePickPts.textContent = 'Pending';
+      elements.singlePickPts.style.color = 'var(--color-gold)';
     }
   } else {
     elements.singlePickSummaryBox.className = 'summary-pick-item';
@@ -318,9 +324,12 @@ function renderPicksSummary() {
     elements.pickTypeTag.textContent = 'WEEK SELECTION';
     elements.singlePickTeam.textContent = 'None Selected';
     elements.singlePickPts.textContent = '0 pts';
+    elements.singlePickPts.style.color = 'var(--color-gold)';
   }
 
-  elements.totalWeekPts.textContent = `${totalPts} PTS`;
+  const totalPrefix = totalPts > 0 ? '+' : '';
+  elements.totalWeekPts.textContent = `${totalPrefix}${totalPts} PTS`;
+  elements.totalWeekPts.style.color = totalPts < 0 ? 'var(--color-red)' : 'var(--color-green)';
 }
 
 /* -------------------------------------------------------------------------- */
@@ -349,7 +358,7 @@ function renderStandings() {
             <span class="player-name-text">${p.name}</span>
           </div>
         </td>
-        <td class="total-pts-text">${p.totalPoints} pts</td>
+        <td class="total-pts-text" style="color: ${p.totalPoints < 0 ? 'var(--color-red)' : 'var(--color-green)'};">${p.totalPoints > 0 ? '+' : ''}${p.totalPoints} pts</td>
         <td style="font-weight: 700;">${p.totalCorrectPicks} / ${p.totalPicksMade}</td>
         <td style="color: var(--color-cyan); font-weight: 700;">${p.accuracyPct}%</td>
         <td style="color: var(--color-gold); font-weight: 700;">+${p.maxBlowoutPoints} pts</td>

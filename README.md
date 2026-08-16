@@ -8,8 +8,12 @@ An NFL Pick'em web application centered around **Margin of Victory ("Blowout Sco
 
 1. **Single Weekly Pick (Winner or Loser)**
    - Select **ONLY 1 team per week**. That selection can be:
-     - **Blowout Winner Pick**: Earn points equal to the **Margin of Victory** ($Winner\ Score - Loser\ Score$) if your team wins (0 pts if they lose).
-     - **Blowout Loser Pick**: Earn points equal to the **Margin of Defeat** ($Opponent\ Score - Your\ Team\ Score$) if your team loses (0 pts if they win).
+     - **Blowout Winner Pick**:
+       - If your team **wins**: Earn **+Margin of Victory** ($Winner\ Score - Loser\ Score$).
+       - If your team **loses**: Lose **-Margin of Defeat** ($Loser\ Score - Winner\ Score$ deducted from season total).
+     - **Blowout Loser Pick**:
+       - If your team **loses**: Earn **+Margin of Defeat** ($Loser\ Score - Winner\ Score$).
+       - If your team **wins**: Lose **-Margin of Victory** ($Winner\ Score - Loser\ Score$ deducted from season total).
 
 2. **Strict Single-Use Team Constraint ("Survivor Rule")**
    - Each NFL team can only be selected **ONCE per season** by a player, regardless of whether you pick them as a Winner or a Loser!
