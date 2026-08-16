@@ -45,73 +45,12 @@ let state = {
   selectedRegAvatar: '🏈'
 };
 
-// DOM Element Selectors
-const elements = {
-  playerDropdown: document.getElementById('playerDropdown'),
-  matrixPlayerSelect: document.getElementById('matrixPlayerSelect'),
-  scoreWeekDropdown: document.getElementById('scoreWeekDropdown'),
-  weekCarousel: document.getElementById('weekCarousel'),
-  matchupsGrid: document.getElementById('matchupsGrid'),
-  weekTitle: document.getElementById('weekTitle'),
-  weekStatusBadge: document.getElementById('weekStatusBadge'),
-  activePlayerBadge: document.getElementById('activePlayerBadge'),
-  singlePickSummaryBox: document.getElementById('singlePickSummaryBox'),
-  pickTypeTag: document.getElementById('pickTypeTag'),
-  singlePickTeam: document.getElementById('singlePickTeam'),
-  singlePickPts: document.getElementById('singlePickPts'),
-  totalWeekPts: document.getElementById('totalWeekPts'),
-  standingsTableBody: document.getElementById('standingsTableBody'),
-  teamsGrid: document.getElementById('teamsGrid'),
-  scoreEditorGrid: document.getElementById('scoreEditorGrid'),
-  toastContainer: document.getElementById('toastContainer'),
-  
-  // Multi-League elements
-  leagueDropdown: document.getElementById('leagueDropdown'),
-  btnOpenLeagueHub: document.getElementById('btnOpenLeagueHub'),
-  modalLeagueHub: document.getElementById('modalLeagueHub'),
-  formCreateLeague: document.getElementById('formCreateLeague'),
-  formJoinLeague: document.getElementById('formJoinLeague'),
-  containerMyLeagues: document.getElementById('containerMyLeagues'),
-  myLeaguesList: document.getElementById('myLeaguesList'),
-  tabLeagueCreate: document.getElementById('tabLeagueCreate'),
-  tabLeagueJoin: document.getElementById('tabLeagueJoin'),
-  tabLeagueMy: document.getElementById('tabLeagueMy'),
-
-  // Auth & Admin elements
-  userProfileBadge: document.getElementById('userProfileBadge'),
-  userAvatar: document.getElementById('userAvatar'),
-  userNameText: document.getElementById('userNameText'),
-  userRoleBadge: document.getElementById('userRoleBadge'),
-  btnSignIn: document.getElementById('btnSignIn'),
-  btnRegister: document.getElementById('btnRegister'),
-  btnAdminPanel: document.getElementById('btnAdminPanel'),
-  btnSignOut: document.getElementById('btnSignOut'),
-  modalAuth: document.getElementById('modalAuth'),
-  modalAdmin: document.getElementById('modalAdmin'),
-  adminUserList: document.getElementById('adminUserList'),
-  formLogin: document.getElementById('formLogin'),
-  formRegister: document.getElementById('formRegister'),
-  formAdminAddUser: document.getElementById('formAdminAddUser'),
-  tabAuthLogin: document.getElementById('tabAuthLogin'),
-  tabAuthRegister: document.getElementById('tabAuthRegister'),
-  
-  // Modals
-  modalRules: document.getElementById('modalRules'),
-  modalExportImport: document.getElementById('modalExportImport'),
-  
-  // Buttons
-  btnRules: document.getElementById('btnRules'),
-  btnLiveSync: document.getElementById('btnLiveSync'),
-  btnExportImport: document.getElementById('btnExportImport'),
-  btnClearPicks: document.getElementById('btnClearPicks'),
-  btnPrevWeek: document.getElementById('btnPrevWeek'),
-  btnNextWeek: document.getElementById('btnNextWeek'),
-  btnSimulateWeek: document.getElementById('btnSimulateWeek'),
-  btnShareLeaderboard: document.getElementById('btnShareLeaderboard'),
-  btnExportFile: document.getElementById('btnExportFile'),
-  btnResetLeague: document.getElementById('btnResetLeague'),
-  inputImportFile: document.getElementById('inputImportFile')
-};
+// Dynamic DOM Element Resolver (Proxy guarantees live DOM binding)
+const elements = new Proxy({}, {
+  get(target, prop) {
+    return document.getElementById(prop);
+  }
+});
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1151,6 +1090,14 @@ function setupEventListeners() {
   document.querySelectorAll('.close-modal').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    });
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+      }
     });
   });
 }
