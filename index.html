@@ -398,20 +398,40 @@
     </div>
   </div>
 
-  <!-- Export/Import Modal -->
+  <!-- Export/Import & Cloud Database Modal -->
   <div id="modalExportImport" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 class="modal-title">💾 Sync & League Data</h3>
+        <h3 class="modal-title">☁️ Cloud Database & Data Sync</h3>
         <button class="close-modal btn-icon">✕</button>
       </div>
       <div>
-        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
-          Share league state with friends or backup your picks file for GitHub Pages hosting.
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Connect your free Firebase Realtime Database so players on different computers log into the same accounts and sync picks live!
         </p>
 
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-          <button id="btnExportFile" class="btn btn-primary">⬇️ Download League Data JSON</button>
+        <!-- Firebase Config Form -->
+        <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 20px;">
+          <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--color-gold); margin-bottom: 8px;">🔥 Firebase Realtime Database Keys</h4>
+          <form id="formFirebaseConfig" style="display: flex; flex-direction: column; gap: 8px;">
+            <input type="text" id="fbApiKey" placeholder="apiKey (e.g. AIzaSy...)" style="padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; font-size: 0.8rem;">
+            <input type="text" id="fbDatabaseUrl" placeholder="databaseURL (https://your-app-default-rtdb.firebaseio.com)" style="padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; font-size: 0.8rem;">
+            <input type="text" id="fbProjectId" placeholder="projectId (e.g. nfl-pickem-app)" style="padding: 8px 10px; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; font-size: 0.8rem;">
+            
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; font-size: 0.8rem;">
+                💾 Save Firebase Config & Connect
+              </button>
+              <button type="button" id="btnClearFirebase" class="btn btn-secondary" style="font-size: 0.8rem;">
+                Disconnect
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- JSON File Sync -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="btnExportFile" class="btn btn-secondary">⬇️ Download Backup JSON File</button>
           
           <label class="btn btn-secondary" style="justify-content: center; cursor: pointer;">
             <span>⬆️ Upload / Import JSON File</span>

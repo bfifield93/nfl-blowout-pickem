@@ -4,6 +4,7 @@
  */
 
 import { DEFAULT_SCHEDULE } from './nflData.js';
+import { syncLeagueToCloud } from './cloudDb.js';
 
 const STORAGE_KEY_LEAGUES = 'nfl_pickem_leagues_v3';
 const STORAGE_KEY_ACTIVE_LEAGUE_ID = 'nfl_pickem_active_league_id_v3';
@@ -84,6 +85,7 @@ export function saveLeagueData(leagueData) {
   leaguesMap[leagueData.id] = leagueData;
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(leagueData.id);
+  syncLeagueToCloud(leagueData);
 }
 
 export function createNewLeague(name, joinCode, creatorUser) {

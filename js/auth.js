@@ -56,9 +56,12 @@ export function getAccounts() {
   }
 }
 
+import { syncAccountsToCloud } from './cloudDb.js';
+
 export function saveAccounts(accounts) {
   try {
     localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(accounts));
+    syncAccountsToCloud(accounts);
   } catch (err) {
     console.error('Error saving accounts:', err);
   }

@@ -36,6 +36,13 @@ import {
   adminUpdateUser,
   adminDeleteUser
 } from './auth.js';
+import {
+  initCloudDatabase,
+  getSavedFirebaseConfig,
+  saveFirebaseConfig,
+  subscribeToRealtimeCloudUpdates,
+  isCloudActive
+} from './cloudDb.js';
 
 // Application State
 let state = {
@@ -56,6 +63,19 @@ const elements = new Proxy({}, {
 document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   populateScoreWeekDropdown();
+
+  // Initialize Cloud Database if configured
+  const cloudRes = await initCloudDatabase();
+  if (cloudRes.success) {
+    showToast('⚡ Connected to Firebase Realtime Database!');
+    subscribeToRealtimeCloudUpdates((updatedLeagues) => {
+      if (updatedLeagues && updatedLeagues[state.league.id]) {
+        state.league = updatedLeagues[state.league.id];
+        renderAll();
+      }
+    });
+  }
+
   renderAll();
   
   // Auto-sync official real 2026 NFL schedule from ESPN for current week
@@ -1042,7 +1062,46 @@ function setupEventListeners() {
 
   // Modal Triggers
   elements.btnRules?.addEventListener('click', () => elements.modalRules?.classList.add('active'));
-  elements.btnExportImport?.addEventListener('click', () => elements.modalExportImport?.classList.add('active'));
+  elements.btnExportImport?.addEventListener('click', () => {
+    const config = getSavedFirebaseConfig();
+    if (config) {
+      if (document.getElementById('fbApiKey')) document.getElementById('fbApiKey').value = config.apiKey || '';
+      if (document.getElementById('fbDatabaseUrl')) document.getElementById('fbDatabaseUrl').value = config.databaseURL || '';
+      if (document.getElementById('fbProjectId')) document.getElementById('fbProjectId').value = config.projectId || '';
+    }
+    elements.modalExportImport?.classList.add('active');
+  });
+
+  elements.formFirebaseConfig?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const apiKey = document.getElementById('fbApiKey').value.trim();
+    const databaseURL = document.getElementById('fbDatabaseUrl').value.trim();
+    const projectId = document.getElementById('fbProjectId').value.trim();
+
+    if (!apiKey || !databaseURL) {
+      showToast('Please enter apiKey and databaseURL.', 'error');
+      return;
+    }
+
+    const config = { apiKey, databaseURL, projectId };
+    saveFirebaseConfig(config);
+    const res = await initCloudDatabase();
+    if (res.success) {
+      elements.modalExportImport?.classList.remove('active');
+      saveLeagueData(state.league);
+      showToast('🔥 Firebase connected! Synced live across all computers.');
+    } else {
+      showToast('Firebase connection failed. Check your keys.', 'error');
+    }
+  });
+
+  elements.btnClearFirebase?.addEventListener('click', () => {
+    saveFirebaseConfig(null);
+    if (document.getElementById('fbApiKey')) document.getElementById('fbApiKey').value = '';
+    if (document.getElementById('fbDatabaseUrl')) document.getElementById('fbDatabaseUrl').value = '';
+    if (document.getElementById('fbProjectId')) document.getElementById('fbProjectId').value = '';
+    showToast('Disconnected Firebase database.');
+  });
 
   elements.btnShareLeaderboard?.addEventListener('click', () => {
     const standings = calculateStandings(state.league.players, state.league.schedule);

@@ -47,8 +47,25 @@ This web application is built with vanilla HTML5, modern CSS3, and ES6 JavaScrip
 
 ---
 
+## ⚡ How to Enable Cross-Computer Sync (Free Cloud Database)
+
+To let players log into accounts, join shared leagues, and view real-time picks from **different computers or phones**:
+
+1. Go to [console.firebase.google.com](https://console.firebase.google.com/) and click **Add project** (Free).
+2. Click **Build** $\rightarrow$ **Realtime Database** $\rightarrow$ **Create Database**.
+3. Choose **Start in test mode** (allows read/write) and click **Enable**.
+4. Go to **Project Settings** (⚙️ gear icon) $\rightarrow$ **General** $\rightarrow$ **Web App (`</>`)** $\rightarrow$ Register App.
+5. Copy your web configuration object keys (`apiKey`, `databaseURL`, `projectId`).
+6. On your live website, click **`💾 Sync / Data`**, paste your Firebase keys into **🔥 Firebase Realtime Database Keys**, and click **Save & Connect**.
+7. Now all picks, accounts, and created leagues will automatically sync live across all devices worldwide!
+
+---
+
 ## ✨ Features Included
 
+- **⚡ Real-Time Cloud Database**: Seamless Firebase Realtime Database adapter for instant multi-device data persistence across computers.
+- **🏆 Multi-League Hub**: Create custom leagues with unique Invite Join Codes and Creator Commissioner Admin privileges.
+- **🔐 User Accounts & Privacy**: Secure account registration and login; players can only edit their own picks.
 - **🌐 Live Real 2026 NFL Data Sync**: Integrated ESPN live public scoreboard API engine! Click **🌐 Live NFL Sync** anytime to automatically fetch real 2026 NFL kickoff times, match dates, live game clocks, and final scores for any week.
 - **🤖 GitHub Action Automated Score Bot**: Includes `.github/workflows/update-nfl-scores.yml` which runs automatically on GitHub Pages during game days to fetch and commit the latest 2026 scores without manual intervention.
 - **NFL Stadium Dark Mode Aesthetic**: Glassmorphic panels, glowing turf green badges, and responsive layouts for mobile and desktop.
