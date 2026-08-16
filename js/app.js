@@ -142,6 +142,8 @@ function renderAuthHeader() {
     if (elements.btnSignOut) elements.btnSignOut.style.display = 'none';
     if (elements.btnAdminPanel) elements.btnAdminPanel.style.display = 'none';
   }
+}
+
 function renderLeagueDropdown() {
   if (!elements.leagueDropdown) return;
   const currentUser = getCurrentUser();
