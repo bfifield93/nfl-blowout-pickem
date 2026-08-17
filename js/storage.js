@@ -25,6 +25,11 @@ const DEFAULT_LEAGUE_DATA = {
   schedule: DEFAULT_SCHEDULE
 };
 
+export function sanitizeJoinCode(code) {
+  if (!code) return '';
+  return code.toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 export function getAllLeagues() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_LEAGUES);
@@ -140,22 +145,22 @@ export async function saveLeagueData(leagueData) {
 
 export function createNewLeague(name, joinCode, creatorUser) {
   const cleanName = (name || '').trim();
-  let cleanCode = (joinCode || '').trim().toUpperCase();
+  let cleanCode = sanitizeJoinCode(joinCode);
 
   if (!cleanName || cleanName.length < 3) {
     return { success: false, error: 'League name must be at least 3 characters long.' };
   }
 
   // If join code is missing or short, auto-generate one
-  if (!cleanCode || cleanCode.length < 3) {
+  if (!cleanCode || cleanCode.length < 2) {
     cleanCode = `${cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, 'LEAGUE')}${Math.floor(100 + Math.random() * 900)}`;
   }
 
   const leaguesMap = getAllLeagues();
   
   // If join code collision occurs, auto-resolve with unique suffix
-  if (Object.values(leaguesMap).some(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode)) {
-    cleanCode = `${cleanCode}_${Math.floor(100 + Math.random() * 900)}`;
+  if (Object.values(leaguesMap).some(l => l.joinCode && sanitizeJoinCode(l.joinCode) === cleanCode)) {
+    cleanCode = `${cleanCode}${Math.floor(10 + Math.random() * 90)}`;
   }
 
   const newLeagueId = `lg_${Date.now()}`;
@@ -198,9 +203,9 @@ export function createNewLeague(name, joinCode, creatorUser) {
 }
 
 export async function joinLeagueByCode(joinCode, user) {
-  const cleanCode = (joinCode || '').trim().toUpperCase();
-  if (!cleanCode) {
-    return { success: false, error: 'Please enter a valid Join Code.' };
+  const targetCode = sanitizeJoinCode(joinCode);
+  if (!targetCode || targetCode.length < 2) {
+    return { success: false, error: 'Please enter a valid Join Code (at least 2 characters).' };
   }
 
   // 1. Pre-fetch latest leagues directly from Firebase REST
@@ -218,18 +223,18 @@ export async function joinLeagueByCode(joinCode, user) {
   const allLeagues = Object.values(leaguesMap);
 
   // 2. Search exact or fuzzy code match
-  let league = allLeagues.find(l => l && l.joinCode && l.joinCode.toUpperCase() === cleanCode);
+  let league = allLeagues.find(l => l && l.joinCode && sanitizeJoinCode(l.joinCode) === targetCode);
 
   if (!league) {
-    league = allLeagues.find(l => l && l.joinCode && l.joinCode.toUpperCase().startsWith(cleanCode));
+    league = allLeagues.find(l => l && l.joinCode && sanitizeJoinCode(l.joinCode).startsWith(targetCode));
   }
 
   if (!league) {
-    league = allLeagues.find(l => l && l.joinCode && cleanCode.startsWith(l.joinCode.toUpperCase()));
+    league = allLeagues.find(l => l && l.joinCode && targetCode.startsWith(sanitizeJoinCode(l.joinCode)));
   }
 
   if (!league) {
-    return { success: false, error: `League not found for Join Code "${cleanCode}". Please verify code with Commissioner.` };
+    return { success: false, error: `League not found for Join Code "${joinCode.trim()}". Please verify code with Commissioner.` };
   }
 
   const userId = user ? (user.userId || user.id) : 'p_user';
