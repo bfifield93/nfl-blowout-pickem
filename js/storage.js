@@ -59,8 +59,13 @@ export function mergeLeaguesFromSync(incomingData) {
   } else if (typeof incomingData === 'object') {
     Object.keys(incomingData).forEach(key => {
       const lg = incomingData[key];
-      if (lg && lg.id && lg.joinCode) {
-        currentMap[lg.id] = lg;
+      if (lg && typeof lg === 'object' && lg.joinCode) {
+        const id = lg.id || key;
+        lg.id = id;
+        if (!lg.players || !Array.isArray(lg.players)) {
+          lg.players = [];
+        }
+        currentMap[id] = lg;
         changed = true;
       }
     });
@@ -198,6 +203,7 @@ export async function joinLeagueByCode(joinCode, user) {
     return { success: false, error: 'Please enter a valid Join Code.' };
   }
 
+  // Pre-fetch latest leagues from Firebase Database
   try {
     const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
     if (cloudRes.ok) {
@@ -209,17 +215,28 @@ export async function joinLeagueByCode(joinCode, user) {
   }
 
   const leaguesMap = getAllLeagues();
-  let league = Object.values(leaguesMap).find(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode);
+  const allLeagues = Object.values(leaguesMap);
+
+  // Search exact or fuzzy code match
+  let league = allLeagues.find(l => l && l.joinCode && l.joinCode.toUpperCase() === cleanCode);
 
   if (!league) {
-    league = Object.values(leaguesMap).find(l => l.joinCode && l.joinCode.toUpperCase().startsWith(cleanCode));
+    league = allLeagues.find(l => l && l.joinCode && l.joinCode.toUpperCase().startsWith(cleanCode));
   }
 
   if (!league) {
-    return { success: false, error: 'League not found with that Join Code. Please verify code with Commissioner.' };
+    league = allLeagues.find(l => l && l.joinCode && cleanCode.startsWith(l.joinCode.toUpperCase()));
+  }
+
+  if (!league) {
+    return { success: false, error: `League not found for Join Code "${cleanCode}". Please verify code with Commissioner.` };
   }
 
   const userId = user ? (user.userId || user.id) : 'p_user';
+  if (!league.players || !Array.isArray(league.players)) {
+    league.players = [];
+  }
+
   let player = league.players.find(p => (p.id === userId || p.userId === userId));
 
   if (!player) {
