@@ -89,8 +89,8 @@ export function setActiveLeagueId(leagueId) {
   localStorage.setItem(STORAGE_KEY_ACTIVE_LEAGUE_ID, leagueId);
 }
 
-export function loadLeagueData(userOrId = null, isAdminUser = false) {
-  const userLeagues = getUserLeagues(userOrId, isAdminUser);
+export function loadLeagueData(userOrId = null) {
+  const userLeagues = getUserLeagues(userOrId);
   if (userLeagues.length === 0) {
     return DEFAULT_LEAGUE_DATA;
   }
@@ -131,14 +131,16 @@ export async function saveLeagueData(leagueData) {
 }
 
 export async function createNewLeague(name, joinCode, creatorUser) {
-  const cleanName = name.trim();
-  const cleanCode = (joinCode || '').trim().toUpperCase();
+  const cleanName = (name || '').trim();
+  let cleanCode = (joinCode || '').trim().toUpperCase();
 
   if (!cleanName || cleanName.length < 3) {
     return { success: false, error: 'League name must be at least 3 characters long.' };
   }
+
+  // If join code is missing or short, auto-generate one
   if (!cleanCode || cleanCode.length < 3) {
-    return { success: false, error: 'Join code must be at least 3 characters long.' };
+    cleanCode = `${cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, 'LEAGUE')}${Math.floor(100 + Math.random() * 900)}`;
   }
 
   // Pre-sync check from Firebase Database
@@ -153,8 +155,10 @@ export async function createNewLeague(name, joinCode, creatorUser) {
   }
 
   const leaguesMap = getAllLeagues();
+  
+  // If join code collision occurs, auto-resolve with unique suffix
   if (Object.values(leaguesMap).some(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode)) {
-    return { success: false, error: 'Join code already in use. Please choose a different join code.' };
+    cleanCode = `${cleanCode}_${Math.floor(100 + Math.random() * 900)}`;
   }
 
   const newLeagueId = `lg_${Date.now()}`;
@@ -256,7 +260,7 @@ export async function joinLeagueByCode(joinCode, user) {
   return { success: true, league };
 }
 
-export function getUserLeagues(userOrId, isAdminUser = false) {
+export function getUserLeagues(userOrId, allowGlobalAdmin = false) {
   const leaguesMap = getAllLeagues();
   const allLeagues = Object.values(leaguesMap);
 
@@ -266,7 +270,7 @@ export function getUserLeagues(userOrId, isAdminUser = false) {
     return [];
   }
 
-  if (isAdminUser) {
+  if (allowGlobalAdmin) {
     return allLeagues;
   }
 

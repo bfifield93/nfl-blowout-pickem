@@ -253,7 +253,7 @@ function renderLeagueDropdown() {
   }
 
   const userId = currentUser.userId || currentUser.id;
-  const userLeagues = getUserLeagues(userId, isAdmin());
+  const userLeagues = getUserLeagues(userId);
 
   elements.leagueDropdown.innerHTML = userLeagues.map(l => {
     return `<option value="${l.id}" ${l.id === state.league?.id ? 'selected' : ''}>🏆 ${l.leagueName}</option>`;
@@ -269,7 +269,7 @@ function renderMyLeaguesList() {
   }
 
   const userId = currentUser.userId || currentUser.id;
-  const userLeagues = getUserLeagues(userId, isAdmin());
+  const userLeagues = getUserLeagues(userId);
 
   if (userLeagues.length === 0) {
     elements.myLeaguesList.innerHTML = `
@@ -385,7 +385,7 @@ function renderAll() {
     if (elements.appWorkspace) elements.appWorkspace.style.display = 'block';
 
     const userId = currentUser.userId || currentUser.id;
-    const userLeagues = getUserLeagues(userId, isAdmin());
+    const userLeagues = getUserLeagues(userId);
 
     if (userLeagues.length > 0 && (!state.league || !userLeagues.some(l => l.id === state.league.id))) {
       state.league = userLeagues[0];
