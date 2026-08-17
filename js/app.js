@@ -66,7 +66,7 @@ const elements = new Proxy({}, {
 });
 
 // Initialize Application
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
   setupEventListeners();
   populateScoreWeekDropdown();
 
@@ -145,7 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Background cloud sync notice:', err);
     }
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 async function autoSyncWeekSchedule(weekNum) {
   const res = await fetchLiveNflScores(weekNum, 2026);
