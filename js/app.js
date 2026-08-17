@@ -1077,12 +1077,6 @@ function setupEventListeners() {
       showToast(`Could not fetch live scores: ${res.error || 'No games found'}`, 'error');
     }
   });
-    if (elements.formLogin) elements.formLogin.style.display = 'none';
-    if (elements.formRegister) elements.formRegister.style.display = 'block';
-    elements.tabAuthRegister?.classList.add('active');
-    elements.tabAuthLogin?.classList.remove('active');
-    elements.modalAuth?.classList.add('active');
-  });
 
   elements.tabAuthLogin?.addEventListener('click', () => {
     if (elements.formLogin) elements.formLogin.style.display = 'block';
