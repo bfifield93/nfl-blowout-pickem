@@ -985,21 +985,12 @@ function setupEventListeners() {
     }
 
     showToast('Checking Firebase Cloud for league...');
-    try {
-      const cloudLeagues = await fetchLeaguesFromCloud();
-      if (cloudLeagues) {
-        mergeLeaguesFromSync(cloudLeagues);
-      }
-    } catch (err) {
-      console.warn('Join cloud fetch notice:', err);
-    }
-
-    const res = joinLeagueByCode(code, currentUser);
+    const res = await joinLeagueByCode(code, currentUser);
 
     if (res.success) {
       setActiveLeagueId(res.league.id);
       state.league = res.league;
-      elements.modalLeagueHub?.classList.remove('active');
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       if (codeInput) codeInput.value = '';
       renderAll();
       showToast(`🏆 Joined "${res.league.leagueName}"!`);
