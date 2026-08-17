@@ -981,7 +981,8 @@ function setupEventListeners() {
     renderAdminMasterPanel();
   });
 
-  window.handleCreateLeagueSubmit = async function() {
+  async function handleCreateLeagueSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
     const errEl = document.getElementById('createLeagueError');
     if (errEl) errEl.style.display = 'none';
 
@@ -1003,7 +1004,7 @@ function setupEventListeners() {
         errEl.textContent = 'Please enter a League Name (at least 3 characters).';
         errEl.style.display = 'block';
       }
-      showToast('Please enter a League Name (at least 3 characters).', 'error');
+      alert('Please enter a League Name (at least 3 characters).');
       return;
     }
 
@@ -1020,11 +1021,12 @@ function setupEventListeners() {
         errEl.textContent = res.error;
         errEl.style.display = 'block';
       }
-      showToast(res.error, 'error');
+      alert(res.error);
     }
-  };
+  }
 
-  window.handleJoinLeagueSubmit = async function() {
+  async function handleJoinLeagueSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
     const errEl = document.getElementById('joinLeagueError');
     if (errEl) errEl.style.display = 'none';
 
@@ -1032,7 +1034,7 @@ function setupEventListeners() {
     if (!currentUser) {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       elements.modalAuth?.classList.add('active');
-      showToast('🔐 Please sign in or register an account to join leagues!', 'error');
+      alert('🔐 Please sign in or register an account to join leagues!');
       return;
     }
 
@@ -1044,7 +1046,7 @@ function setupEventListeners() {
         errEl.textContent = 'Please enter an Invite Join Code.';
         errEl.style.display = 'block';
       }
-      showToast('Please enter an Invite Join Code.', 'error');
+      alert('Please enter an Invite Join Code.');
       return;
     }
 
@@ -1064,22 +1066,14 @@ function setupEventListeners() {
         errEl.style.display = 'block';
       }
       alert(`Join Error: ${res.error}`);
-      showToast(res.error, 'error');
     }
-  };
+  }
 
-  elements.btnSubmitCreateLeague?.addEventListener('click', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
-  elements.formCreateLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
+  document.getElementById('formCreateLeague')?.addEventListener('submit', handleCreateLeagueSubmit);
+  document.getElementById('formJoinLeague')?.addEventListener('submit', handleJoinLeagueSubmit);
 
-  elements.btnSubmitJoinLeague?.addEventListener('click', (e) => { e.preventDefault(); handleJoinLeagueSubmit(); });
-  elements.formJoinLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleJoinLeagueSubmit(); });
-
-  document.getElementById('joinLeagueCode')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleJoinLeagueSubmit();
-    }
-  });
+  document.getElementById('btnSubmitCreateLeague')?.addEventListener('click', handleCreateLeagueSubmit);
+  document.getElementById('btnSubmitJoinLeague')?.addEventListener('click', handleJoinLeagueSubmit);
 
   // Delete League Handler (Master / Admin)
   document.addEventListener('click', async (e) => {
