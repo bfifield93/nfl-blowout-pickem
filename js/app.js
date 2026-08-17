@@ -919,8 +919,10 @@ function setupEventListeners() {
     renderMyLeaguesList();
   });
 
-  elements.formCreateLeague?.addEventListener('submit', (e) => {
-    e.preventDefault();
+  async function handleCreateLeagueSubmit() {
+    const errEl = document.getElementById('createLeagueError');
+    if (errEl) errEl.style.display = 'none';
+
     const currentUser = getCurrentUser();
     if (!currentUser) {
       showToast('🔐 Please sign in first!', 'error');
@@ -928,24 +930,41 @@ function setupEventListeners() {
       return;
     }
 
-    const name = document.getElementById('createLeagueName').value;
-    const code = document.getElementById('createLeagueCode').value;
+    const nameInput = document.getElementById('createLeagueName');
+    const codeInput = document.getElementById('createLeagueCode');
+    const name = nameInput ? nameInput.value : '';
+    const code = codeInput ? codeInput.value : '';
+
+    if (!name || name.trim().length < 3) {
+      if (errEl) {
+        errEl.textContent = 'Please enter a League Name (at least 3 characters).';
+        errEl.style.display = 'block';
+      }
+      showToast('Please enter a League Name (at least 3 characters).', 'error');
+      return;
+    }
 
     const res = createNewLeague(name, code, currentUser);
     if (res.success) {
       state.league = res.league;
       elements.modalLeagueHub?.classList.remove('active');
-      document.getElementById('createLeagueName').value = '';
-      document.getElementById('createLeagueCode').value = '';
+      if (nameInput) nameInput.value = '';
+      if (codeInput) codeInput.value = '';
       renderAll();
       showToast(`🏆 Created & launched "${res.league.leagueName}"! Join Code: ${res.league.joinCode}`);
     } else {
+      if (errEl) {
+        errEl.textContent = res.error;
+        errEl.style.display = 'block';
+      }
       showToast(res.error, 'error');
     }
-  });
+  }
 
-  elements.formJoinLeague?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function handleJoinLeagueSubmit() {
+    const errEl = document.getElementById('joinLeagueError');
+    if (errEl) errEl.style.display = 'none';
+
     const currentUser = getCurrentUser();
     if (!currentUser) {
       showToast('🔐 Please sign in first!', 'error');
@@ -953,7 +972,17 @@ function setupEventListeners() {
       return;
     }
 
-    const code = document.getElementById('joinLeagueCode').value;
+    const codeInput = document.getElementById('joinLeagueCode');
+    const code = codeInput ? codeInput.value : '';
+
+    if (!code || code.trim().length === 0) {
+      if (errEl) {
+        errEl.textContent = 'Please enter an Invite Join Code.';
+        errEl.style.display = 'block';
+      }
+      showToast('Please enter an Invite Join Code.', 'error');
+      return;
+    }
 
     showToast('Checking Firebase Cloud for league...');
     try {
@@ -971,13 +1000,23 @@ function setupEventListeners() {
       setActiveLeagueId(res.league.id);
       state.league = res.league;
       elements.modalLeagueHub?.classList.remove('active');
-      document.getElementById('joinLeagueCode').value = '';
+      if (codeInput) codeInput.value = '';
       renderAll();
       showToast(`🏆 Joined "${res.league.leagueName}"!`);
     } else {
+      if (errEl) {
+        errEl.textContent = res.error;
+        errEl.style.display = 'block';
+      }
       showToast(res.error, 'error');
     }
-  });
+  }
+
+  elements.btnSubmitCreateLeague?.addEventListener('click', handleCreateLeagueSubmit);
+  elements.formCreateLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
+
+  elements.btnSubmitJoinLeague?.addEventListener('click', handleJoinLeagueSubmit);
+  elements.formJoinLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleJoinLeagueSubmit(); });
 
   elements.containerMyLeagues?.addEventListener('click', (e) => {
     const switchBtn = e.target.closest('.btn-switch-league');

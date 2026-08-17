@@ -324,7 +324,7 @@
       </div>
 
       <!-- Create League Form -->
-      <form id="formCreateLeague">
+      <form id="formCreateLeague" onsubmit="return false;">
         <div style="margin-bottom: 14px;">
           <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">League Name</label>
           <input type="text" id="createLeagueName" placeholder="e.g. Sunday Football Pool 2026" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
@@ -335,20 +335,25 @@
           <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">Friends will use this code to join your league!</span>
         </div>
 
-        <div style="background: rgba(0,255,135,0.1); border: 1px solid rgba(0,255,135,0.3); padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.75rem; color: var(--color-green); margin-bottom: 20px;">
+        <div style="background: rgba(0,255,135,0.1); border: 1px solid rgba(0,255,135,0.3); padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.75rem; color: var(--color-green); margin-bottom: 16px;">
           👑 You will automatically become the <strong>Commissioner Admin</strong> of this league!
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Create & Launch League</button>
+        <div id="createLeagueError" style="display: none; color: #FF4D4D; background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); padding: 8px 12px; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 14px; font-weight: 700;"></div>
+
+        <button id="btnSubmitCreateLeague" type="button" class="btn btn-primary" style="width: 100%; justify-content: center;">Create & Launch League</button>
       </form>
 
       <!-- Join League Form -->
-      <form id="formJoinLeague" style="display: none;">
+      <form id="formJoinLeague" onsubmit="return false;">
         <div style="margin-bottom: 20px;">
           <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Enter Join Code</label>
           <input type="text" id="joinLeagueCode" placeholder="e.g. BLOWOUT2026" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; text-transform: uppercase; font-size: 1.1rem; font-weight: 800; text-align: center;">
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Join League</button>
+
+        <div id="joinLeagueError" style="display: none; color: #FF4D4D; background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); padding: 8px 12px; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 14px; font-weight: 700;"></div>
+
+        <button id="btnSubmitJoinLeague" type="button" class="btn btn-primary" style="width: 100%; justify-content: center;">Join League</button>
       </form>
 
       <!-- My Leagues List -->
