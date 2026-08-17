@@ -1100,7 +1100,7 @@ function setupEventListeners() {
       const username = delUserBtn.dataset.username || 'this user';
 
       if (confirm(`⚠️ Are you sure you want to permanently delete account @${username}?`)) {
-        const res = adminDeleteUser(userId);
+        const res = await adminDeleteUser(userId);
         if (res.success) {
           renderAll();
           renderAdminMasterPanel();

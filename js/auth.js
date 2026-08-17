@@ -93,48 +93,54 @@ export function saveAccounts(accounts) {
 }
 
 export function mergeAccountsFromSync(incomingAccounts) {
-  if (!incomingAccounts || !Array.isArray(incomingAccounts)) return;
-  const currentAccounts = getAccounts();
-  let changed = false;
+  if (!incomingAccounts) return;
+  const arr = Array.isArray(incomingAccounts) ? incomingAccounts : Object.values(incomingAccounts);
+  if (!arr || arr.length === 0) return;
 
-  incomingAccounts.forEach(inc => {
-    if (!inc || !inc.username) return;
-    const existingIdx = currentAccounts.findIndex(a => (a.id && inc.id && a.id === inc.id) || a.username.toLowerCase() === inc.username.toLowerCase());
-    if (existingIdx >= 0) {
-      currentAccounts[existingIdx] = { ...currentAccounts[existingIdx], ...inc };
-    } else {
-      currentAccounts.push(inc);
-      changed = true;
-    }
-  });
+  // Guarantee master admin account is preserved
+  if (!arr.some(a => a.username === 'master')) {
+    const masterAcc = DEFAULT_ACCOUNTS.find(a => a.username === 'master');
+    if (masterAcc) arr.unshift(masterAcc);
+  }
 
-  if (changed) {
-    saveAccounts(currentAccounts);
-  } else {
-    try {
-      localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(currentAccounts));
-    } catch (err) {
-      console.error('Error saving merged accounts:', err);
-    }
+  localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(arr));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('accountsUpdated', { detail: arr }));
   }
 }
 
 export function getCurrentSession() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_SESSION);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch (err) {
     return null;
   }
 }
 
 export function setCurrentSession(sessionData) {
-  if (!sessionData) {
-    localStorage.removeItem(STORAGE_KEY_SESSION);
-  } else {
-    localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(sessionData));
+  try {
+    if (sessionData) {
+      localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(sessionData));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_SESSION);
+    }
+  } catch (err) {
+    console.error('Error updating session:', err);
   }
+}
+
+export function getCurrentUser() {
+  const session = getCurrentSession();
+  if (!session) return null;
+  const accounts = getAccounts();
+  const found = accounts.find(a => (a.id === session.userId || a.username === session.username));
+  return found || session;
+}
+
+export function isAdmin() {
+  const user = getCurrentUser();
+  return user && (user.role === 'ADMIN' || user.username === 'master');
 }
 
 export async function loginUser(username, password) {
@@ -146,8 +152,7 @@ export async function loginUser(username, password) {
     if (cloudRes.ok) {
       const cloudAccounts = await cloudRes.json();
       if (cloudAccounts) {
-        const arr = Array.isArray(cloudAccounts) ? cloudAccounts : Object.values(cloudAccounts);
-        mergeAccountsFromSync(arr);
+        mergeAccountsFromSync(cloudAccounts);
       }
     }
   } catch (err) {
@@ -194,17 +199,16 @@ export async function registerUser(name, username, password, avatar = '🏈', ro
     if (cloudRes.ok) {
       const cloudAccounts = await cloudRes.json();
       if (cloudAccounts) {
-        const arr = Array.isArray(cloudAccounts) ? cloudAccounts : Object.values(cloudAccounts);
-        mergeAccountsFromSync(arr);
+        mergeAccountsFromSync(cloudAccounts);
       }
     }
   } catch (err) {
-    console.warn('Pre-registration cloud fetch notice:', err);
+    console.warn('Direct REST cloud fetch notice:', err);
   }
 
   const accounts = getAccounts();
   if (accounts.some(a => a.username.toLowerCase() === cleanUsername)) {
-    return { success: false, error: 'Username is already taken.' };
+    return { success: false, error: `Username "${cleanUsername}" is already registered. Please choose another.` };
   }
 
   const passwordHash = await hashPassword(password);
@@ -212,22 +216,22 @@ export async function registerUser(name, username, password, avatar = '🏈', ro
     id: `u_${Date.now()}`,
     username: cleanUsername,
     name: name.trim() || cleanUsername,
-    avatar,
-    role,
-    passwordHash
+    avatar: avatar || '🏈',
+    role: role,
+    passwordHash: passwordHash,
+    createdAt: Date.now()
   };
 
   accounts.push(newAccount);
   saveAccounts(accounts);
 
-  // Direct REST PUT to Firebase Realtime Database to guarantee immediate write
+  // Direct REST PUT to Firebase Realtime Database
   try {
-    const putRes = await fetch(FIREBASE_REST_ACCOUNTS_URL, {
+    await fetch(FIREBASE_REST_ACCOUNTS_URL, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(accounts)
     });
-    console.log('⚡ Direct REST register sync status:', putRes.status);
   } catch (err) {
     console.error('Direct REST register sync error:', err);
   }
@@ -240,25 +244,14 @@ export async function registerUser(name, username, password, avatar = '🏈', ro
     role: newAccount.role,
     loggedInAt: Date.now()
   };
-  setCurrentSession(session);
 
-  return { success: true, user: session, account: newAccount };
+  setCurrentSession(session);
+  return { success: true, user: session };
 }
 
 export function logoutUser() {
   setCurrentSession(null);
-}
-
-export function getCurrentUser() {
-  const session = getCurrentSession();
-  if (!session) return null;
-  const accounts = getAccounts();
-  return accounts.find(a => a.id === session.userId) || session;
-}
-
-export function isAdmin() {
-  const user = getCurrentUser();
-  return user && user.role === 'ADMIN';
+  return true;
 }
 
 export async function adminUpdateUser(userId, updates) {
@@ -267,7 +260,7 @@ export async function adminUpdateUser(userId, updates) {
   }
 
   const accounts = getAccounts();
-  const account = accounts.find(a => a.id === userId);
+  const account = accounts.find(a => a.id === userId || a.username === userId);
   if (!account) {
     return { success: false, error: 'User account not found.' };
   }
@@ -283,30 +276,56 @@ export async function adminUpdateUser(userId, updates) {
   }
 
   saveAccounts(accounts);
+
+  // Direct REST PUT to Firebase Database
+  try {
+    await fetch(FIREBASE_REST_ACCOUNTS_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(accounts)
+    });
+  } catch (err) {
+    console.error('Direct REST update user error:', err);
+  }
+
   return { success: true, account };
 }
 
-export function adminDeleteUser(userId) {
+export async function adminDeleteUser(userId) {
   if (!isAdmin()) {
     return { success: false, error: 'Admin privileges required.' };
   }
 
   let accounts = getAccounts();
-  const target = accounts.find(a => a.id === userId);
-  if (target && target.role === 'ADMIN') {
-    const adminCount = accounts.filter(a => a.role === 'ADMIN').length;
-    if (adminCount <= 1) {
-      return { success: false, error: 'Cannot delete the only Commissioner Admin.' };
-    }
+  const target = accounts.find(a => a.id === userId || a.userId === userId || a.username === userId);
+  if (!target) {
+    return { success: false, error: 'User account not found.' };
   }
 
-  accounts = accounts.filter(a => a.id !== userId);
+  if (target.username === 'master') {
+    return { success: false, error: 'The Master Admin account cannot be deleted.' };
+  }
+
+  const targetId = target.id || target.userId;
+  accounts = accounts.filter(a => a.id !== targetId && a.username !== target.username);
+  
   saveAccounts(accounts);
 
+  // Direct REST PUT to Firebase Realtime Database
+  try {
+    await fetch(FIREBASE_REST_ACCOUNTS_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(accounts)
+    });
+  } catch (err) {
+    console.error('Direct REST delete user cloud error:', err);
+  }
+
   const session = getCurrentSession();
-  if (session && session.userId === userId) {
+  if (session && (session.userId === targetId || session.username === target.username)) {
     logoutUser();
   }
 
-  return { success: true };
+  return { success: true, deletedUsername: target.username };
 }
