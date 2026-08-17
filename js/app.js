@@ -47,7 +47,9 @@ import {
   subscribeToRealtimeCloudUpdates,
   fetchAccountsFromCloud,
   fetchLeaguesFromCloud,
-  isCloudActive
+  isCloudActive,
+  syncAccountsToCloud,
+  syncLeagueToCloud
 } from './cloudDb.js';
 
 // Application State
@@ -1082,6 +1084,9 @@ function setupEventListeners() {
       alert(`Join Error: ${res.error}`);
     }
   }
+
+  window.doCreateLeague = handleCreateLeagueSubmit;
+  window.doJoinLeague = handleJoinLeagueSubmit;
 
   document.getElementById('formCreateLeague')?.addEventListener('submit', handleCreateLeagueSubmit);
   document.getElementById('formJoinLeague')?.addEventListener('submit', handleJoinLeagueSubmit);
