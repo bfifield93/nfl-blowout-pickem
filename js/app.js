@@ -69,6 +69,19 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   populateScoreWeekDropdown();
 
+  // Automatic Cloud Sync Listeners
+  window.addEventListener('accountsUpdated', (e) => {
+    if (e.detail) {
+      syncAccountsToCloud(e.detail);
+    }
+  });
+
+  window.addEventListener('leagueUpdated', (e) => {
+    if (e.detail) {
+      syncLeagueToCloud(e.detail);
+    }
+  });
+
   // Multi-Browser / Multi-Tab Realtime Broadcast Sync
   initBroadcastSync((eventData) => {
     if (eventData.type === 'LEAGUE_UPDATE' && eventData.payload) {

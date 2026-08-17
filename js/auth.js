@@ -59,6 +59,9 @@ export function getAccounts() {
 export function saveAccounts(accounts) {
   try {
     localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(accounts));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('accountsUpdated', { detail: accounts }));
+    }
   } catch (err) {
     console.error('Error saving accounts:', err);
   }

@@ -96,6 +96,9 @@ export function saveLeagueData(leagueData) {
   leaguesMap[leagueData.id] = leagueData;
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(leagueData.id);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('leagueUpdated', { detail: leagueData }));
+  }
 }
 
 export function createNewLeague(name, joinCode, creatorUser) {
