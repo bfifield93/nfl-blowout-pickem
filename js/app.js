@@ -981,7 +981,7 @@ function setupEventListeners() {
     renderAdminMasterPanel();
   });
 
-  async function handleCreateLeagueSubmit() {
+  window.handleCreateLeagueSubmit = async function() {
     const errEl = document.getElementById('createLeagueError');
     if (errEl) errEl.style.display = 'none';
 
@@ -1022,9 +1022,9 @@ function setupEventListeners() {
       }
       showToast(res.error, 'error');
     }
-  }
+  };
 
-  async function handleJoinLeagueSubmit() {
+  window.handleJoinLeagueSubmit = async function() {
     const errEl = document.getElementById('joinLeagueError');
     if (errEl) errEl.style.display = 'none';
 
@@ -1063,9 +1063,10 @@ function setupEventListeners() {
         errEl.textContent = res.error;
         errEl.style.display = 'block';
       }
+      alert(`Join Error: ${res.error}`);
       showToast(res.error, 'error');
     }
-  }
+  };
 
   elements.btnSubmitCreateLeague?.addEventListener('click', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
   elements.formCreateLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
