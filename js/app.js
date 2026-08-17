@@ -1176,15 +1176,13 @@ function setupEventListeners() {
     const u = uInput ? uInput.value : '';
     const p = pInput ? pInput.value : '';
     
-    let res = await loginUser(u, p);
-
-    if (!res.success && res.error === 'User account not found.') {
-      const cloudAccounts = await fetchAccountsFromCloud();
-      if (cloudAccounts && Array.isArray(cloudAccounts)) {
-        mergeAccountsFromSync(cloudAccounts);
-        res = await loginUser(u, p);
-      }
+    // Always fetch latest cloud accounts prior to verifying credentials
+    const cloudAccounts = await fetchAccountsFromCloud();
+    if (cloudAccounts && Array.isArray(cloudAccounts)) {
+      mergeAccountsFromSync(cloudAccounts);
     }
+
+    let res = await loginUser(u, p);
 
     if (res.success) {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
@@ -1209,7 +1207,7 @@ function setupEventListeners() {
 
     const res = await registerUser(name, u, p, avatar);
     if (res.success) {
-      syncAccountsToCloud(getAccounts());
+      await syncAccountsToCloud(getAccounts());
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       if (nameInput) nameInput.value = '';
       if (uInput) uInput.value = '';

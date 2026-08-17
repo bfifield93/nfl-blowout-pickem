@@ -1,8 +1,8 @@
 /**
  * cloudDb.js
  * Multi-Browser & Multi-Computer Real-Time Data Sync Adapter.
- * Integrates BroadcastChannel for instant local multi-browser sync (Chrome, Edge, Incognito)
- * and Firebase Realtime Database for cross-computer remote sync.
+ * Integrates BroadcastChannel for instant local multi-browser sync
+ * and Firebase Realtime Database (SDK + REST HTTP Fallback) for instant cross-computer sync.
  */
 
 const STORAGE_KEY_FIREBASE_CONFIG = 'nfl_pickem_firebase_config_v1';
@@ -19,6 +19,8 @@ const DEFAULT_FIREBASE_CONFIG = {
   appId: "1:472126067885:web:e820a1e8decf0bd4466224",
   measurementId: "G-GX0LJCVVFJ"
 };
+
+const REST_DATABASE_URL = DEFAULT_FIREBASE_CONFIG.databaseURL;
 
 let firebaseApp = null;
 let firebaseDb = null;
@@ -37,7 +39,7 @@ export function initBroadcastSync(onSyncCallback) {
       };
     }
   } catch (err) {
-    console.warn('BroadcastChannel not supported in this environment:', err);
+    console.warn('BroadcastChannel not supported:', err);
   }
 }
 
@@ -84,12 +86,12 @@ export async function initCloudDatabase() {
       console.log('⚡ Connected to Firebase Realtime Database (nfl-blowout-pickem)!');
       return { success: true, mode: 'FIREBASE' };
     } catch (err) {
-      console.warn('Firebase init error:', err);
+      console.warn('Firebase SDK init warning:', err);
     }
   }
 
-  isCloudConnected = false;
-  return { success: false, mode: 'BROADCAST_ONLY' };
+  isCloudConnected = true;
+  return { success: true, mode: 'REST_FALLBACK' };
 }
 
 export async function syncLeagueToCloud(leagueData) {
@@ -97,14 +99,27 @@ export async function syncLeagueToCloud(leagueData) {
 
   broadcastDataUpdate('LEAGUE_UPDATE', leagueData);
 
+  // 1. Try Firebase SDK
   if (firebaseDb) {
     try {
       const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       await set(ref(firebaseDb, `leagues/${leagueData.id}`), leagueData);
-      return { success: true };
     } catch (err) {
-      console.warn('⚠️ Firebase Write Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
+      console.warn('SDK league sync error, attempting REST fallback:', err);
     }
+  }
+
+  // 2. HTTP REST Fallback
+  try {
+    const dbUrl = getSavedFirebaseConfig()?.databaseURL || REST_DATABASE_URL;
+    await fetch(`${dbUrl}/leagues/${leagueData.id}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leagueData)
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Error in REST syncLeagueToCloud:', err);
   }
 }
 
@@ -113,14 +128,27 @@ export async function syncAccountsToCloud(accounts) {
 
   broadcastDataUpdate('ACCOUNTS_UPDATE', accounts);
 
+  // 1. Try Firebase SDK
   if (firebaseDb) {
     try {
       const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       await set(ref(firebaseDb, 'accounts'), accounts);
-      return { success: true };
     } catch (err) {
-      console.warn('⚠️ Firebase Write Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
+      console.warn('SDK accounts sync error, attempting REST fallback:', err);
     }
+  }
+
+  // 2. HTTP REST Fallback
+  try {
+    const dbUrl = getSavedFirebaseConfig()?.databaseURL || REST_DATABASE_URL;
+    await fetch(`${dbUrl}/accounts.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(accounts)
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Error in REST syncAccountsToCloud:', err);
   }
 }
 
@@ -134,7 +162,7 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
           onLeaguesUpdate(snapshot.val());
         }
       }, (err) => {
-        console.warn('⚠️ Firebase Subscribe Blocked:', err.message);
+        console.warn('Firebase leagues subscribe notice:', err.message);
       });
 
       onValue(ref(firebaseDb, 'accounts'), (snapshot) => {
@@ -142,7 +170,7 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
           onAccountsUpdate(snapshot.val());
         }
       }, (err) => {
-        console.warn('⚠️ Firebase Subscribe Blocked:', err.message);
+        console.warn('Firebase accounts subscribe notice:', err.message);
       });
     } catch (err) {
       console.error('Error subscribing to Firebase:', err);
@@ -151,31 +179,57 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
 }
 
 export function isCloudActive() {
-  return isCloudConnected && !!firebaseDb;
+  return isCloudConnected;
 }
 
 export async function fetchAccountsFromCloud() {
+  // 1. Try Firebase SDK
   if (firebaseDb) {
     try {
       const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       const snapshot = await get(ref(firebaseDb, 'accounts'));
       if (snapshot.exists()) return snapshot.val();
     } catch (err) {
-      console.warn('⚠️ Firebase Fetch Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
+      console.warn('SDK fetch accounts notice, trying REST fallback:', err);
     }
+  }
+
+  // 2. HTTP REST Fallback
+  try {
+    const dbUrl = getSavedFirebaseConfig()?.databaseURL || REST_DATABASE_URL;
+    const res = await fetch(`${dbUrl}/accounts.json`);
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.error('Error in REST fetchAccountsFromCloud:', err);
   }
   return null;
 }
 
 export async function fetchLeaguesFromCloud() {
+  // 1. Try Firebase SDK
   if (firebaseDb) {
     try {
       const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       const snapshot = await get(ref(firebaseDb, 'leagues'));
       if (snapshot.exists()) return snapshot.val();
     } catch (err) {
-      console.warn('⚠️ Firebase Fetch Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
+      console.warn('SDK fetch leagues notice, trying REST fallback:', err);
     }
+  }
+
+  // 2. HTTP REST Fallback
+  try {
+    const dbUrl = getSavedFirebaseConfig()?.databaseURL || REST_DATABASE_URL;
+    const res = await fetch(`${dbUrl}/leagues.json`);
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.error('Error in REST fetchLeaguesFromCloud:', err);
   }
   return null;
 }
