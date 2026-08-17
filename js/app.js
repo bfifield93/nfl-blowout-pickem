@@ -954,10 +954,21 @@ function setupEventListeners() {
     }
 
     const code = document.getElementById('joinLeagueCode').value;
-    showToast('Searching Firebase Cloud for league...');
-    const res = await joinLeagueByCode(code, currentUser);
+
+    showToast('Checking Firebase Cloud for league...');
+    try {
+      const cloudLeagues = await fetchLeaguesFromCloud();
+      if (cloudLeagues) {
+        mergeLeaguesFromSync(cloudLeagues);
+      }
+    } catch (err) {
+      console.warn('Join cloud fetch notice:', err);
+    }
+
+    const res = joinLeagueByCode(code, currentUser);
 
     if (res.success) {
+      setActiveLeagueId(res.league.id);
       state.league = res.league;
       elements.modalLeagueHub?.classList.remove('active');
       document.getElementById('joinLeagueCode').value = '';
