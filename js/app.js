@@ -1240,6 +1240,22 @@ function setupEventListeners() {
     }
   });
 
+  elements.btnForceCloudSync?.addEventListener('click', async () => {
+    showToast('Syncing accounts with Firebase Cloud Database...');
+    const cloudAccounts = await fetchAccountsFromCloud();
+    const cloudLeagues = await fetchLeaguesFromCloud();
+    if (cloudAccounts && Array.isArray(cloudAccounts)) {
+      mergeAccountsFromSync(cloudAccounts);
+    }
+    if (cloudLeagues) {
+      mergeLeaguesFromSync(cloudLeagues);
+    }
+    renderAll();
+    const accs = getAccounts();
+    await syncAccountsToCloud(accs);
+    showToast(`⚡ Firebase Sync Complete! ${accs.length} user accounts active.`);
+  });
+
   elements.btnSignOut?.addEventListener('click', () => {
     logoutUser();
     renderAll();

@@ -83,20 +83,27 @@ export function saveAccounts(accounts) {
 export function mergeAccountsFromSync(incomingAccounts) {
   if (!incomingAccounts || !Array.isArray(incomingAccounts)) return;
   const currentAccounts = getAccounts();
+  let changed = false;
 
   incomingAccounts.forEach(inc => {
-    const existingIdx = currentAccounts.findIndex(a => a.id === inc.id || a.username.toLowerCase() === inc.username.toLowerCase());
+    if (!inc || !inc.username) return;
+    const existingIdx = currentAccounts.findIndex(a => (a.id && inc.id && a.id === inc.id) || a.username.toLowerCase() === inc.username.toLowerCase());
     if (existingIdx >= 0) {
       currentAccounts[existingIdx] = { ...currentAccounts[existingIdx], ...inc };
     } else {
       currentAccounts.push(inc);
+      changed = true;
     }
   });
 
-  try {
-    localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(currentAccounts));
-  } catch (err) {
-    console.error('Error saving merged accounts:', err);
+  if (changed) {
+    saveAccounts(currentAccounts);
+  } else {
+    try {
+      localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(currentAccounts));
+    } catch (err) {
+      console.error('Error saving merged accounts:', err);
+    }
   }
 }
 
