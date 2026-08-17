@@ -65,7 +65,7 @@ const elements = new Proxy({}, {
 });
 
 // Initialize Application
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   populateScoreWeekDropdown();
 
@@ -81,42 +81,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Initialize Cloud Database & Perform Initial Sync
-  const cloudRes = await initCloudDatabase();
-
-  const [initialAccounts, initialLeagues] = await Promise.all([
-    fetchAccountsFromCloud(),
-    fetchLeaguesFromCloud()
-  ]);
-
-  if (initialAccounts) mergeAccountsFromSync(initialAccounts);
-  if (initialLeagues) mergeLeaguesFromSync(initialLeagues);
-
-  state.league = loadLeagueData();
-
-  if (cloudRes.success && cloudRes.mode === 'CUSTOM_FIREBASE') {
-    showToast('⚡ Connected to custom Firebase Database!');
-    subscribeToRealtimeCloudUpdates(
-      (updatedLeagues) => {
-        if (updatedLeagues) {
-          mergeLeaguesFromSync(updatedLeagues);
-          state.league = loadLeagueData();
-          renderAll();
-        }
-      },
-      (updatedAccounts) => {
-        if (updatedAccounts) {
-          mergeAccountsFromSync(updatedAccounts);
-          renderAll();
-        }
-      }
-    );
-  }
-
+  // RENDER IMMEDIATELY: Ensures 0ms instant UI rendering and button interactivity!
   renderAll();
-  
-  // Auto-sync official real 2026 NFL schedule from ESPN for current week
-  await autoSyncWeekSchedule(state.currentWeek);
+
+  // Non-blocking background schedule sync
+  autoSyncWeekSchedule(state.currentWeek);
+
+  // Non-blocking background cloud database sync
+  initCloudDatabase().then(async (cloudRes) => {
+    try {
+      const [initialAccounts, initialLeagues] = await Promise.all([
+        fetchAccountsFromCloud(),
+        fetchLeaguesFromCloud()
+      ]);
+
+      let updated = false;
+      if (initialAccounts) {
+        mergeAccountsFromSync(initialAccounts);
+        updated = true;
+      }
+      if (initialLeagues) {
+        mergeLeaguesFromSync(initialLeagues);
+        updated = true;
+      }
+
+      if (updated) {
+        state.league = loadLeagueData();
+        renderAll();
+      }
+
+      if (cloudRes.success && cloudRes.mode === 'CUSTOM_FIREBASE') {
+        subscribeToRealtimeCloudUpdates(
+          (updatedLeagues) => {
+            if (updatedLeagues) {
+              mergeLeaguesFromSync(updatedLeagues);
+              state.league = loadLeagueData();
+              renderAll();
+            }
+          },
+          (updatedAccounts) => {
+            if (updatedAccounts) {
+              mergeAccountsFromSync(updatedAccounts);
+              renderAll();
+            }
+          }
+        );
+      }
+    } catch (err) {
+      console.warn('Background cloud sync notice:', err);
+    }
+  });
 });
 
 async function autoSyncWeekSchedule(weekNum) {
