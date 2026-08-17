@@ -202,6 +202,11 @@ function syncAccountsWithPlayers() {
 
 function renderAuthHeader() {
   const currentUser = getCurrentUser();
+  const accCount = getAccounts().length;
+
+  if (elements.cloudStatusBadge) {
+    elements.cloudStatusBadge.textContent = `⚡ Live Firebase Sync (${accCount} Accounts)`;
+  }
 
   if (currentUser) {
     if (elements.userProfileBadge) elements.userProfileBadge.style.display = 'flex';
