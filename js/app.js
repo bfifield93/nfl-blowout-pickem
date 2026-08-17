@@ -223,32 +223,38 @@ async function autoSyncWeekSchedule(weekNum) {
 }
 
 function getActivePlayer() {
+  if (!state.league) return null;
+  if (!Array.isArray(state.league.players)) {
+    state.league.players = [];
+  }
   syncAccountsWithPlayers();
   const currentUser = getCurrentUser();
+  const uid = currentUser ? (currentUser.userId || currentUser.id) : null;
   
-  if (currentUser && !isAdmin()) {
-    state.league.activePlayerId = currentUser.userId;
+  if (uid && !isAdmin()) {
+    state.league.activePlayerId = uid;
   }
 
   const activeId = state.league.activePlayerId;
-  let player = state.league.players.find(p => p.id === activeId);
+  let player = state.league.players.find(p => p && (p.id === activeId || p.userId === activeId));
 
   if (!player && currentUser) {
-    player = { id: currentUser.userId, name: currentUser.name, avatar: currentUser.avatar, picks: {} };
+    player = { id: uid, userId: uid, name: currentUser.name, avatar: currentUser.avatar || '🏈', picks: {} };
     state.league.players.push(player);
-    state.league.activePlayerId = currentUser.userId;
+    state.league.activePlayerId = uid;
   }
 
-  return player || state.league.players[0];
+  return player || state.league.players[0] || null;
 }
 
 function syncAccountsWithPlayers() {
-  if (!state.league || !state.league.players) return;
-  const accounts = getAccounts();
+  if (!state.league || !Array.isArray(state.league.players)) return;
+  const accounts = getAccounts() || [];
   const players = state.league.players;
 
   players.forEach(player => {
-    const acc = accounts.find(a => (a.id === player.id || a.id === player.userId));
+    if (!player) return;
+    const acc = accounts.find(a => a && (a.id === player.id || a.id === player.userId || a.username === player.name));
     if (acc) {
       if (acc.name) player.name = acc.name;
       if (acc.avatar) player.avatar = acc.avatar;
@@ -257,10 +263,10 @@ function syncAccountsWithPlayers() {
 
   const currentUser = getCurrentUser();
   const uid = currentUser ? (currentUser.userId || currentUser.id) : null;
-  if (uid && players.some(p => (p.id === uid || p.userId === uid))) {
+  if (uid && players.some(p => p && (p.id === uid || p.userId === uid))) {
     state.league.activePlayerId = uid;
-  } else if (!state.league.activePlayerId && players.length > 0) {
-    state.league.activePlayerId = players[0].id;
+  } else if (!state.league.activePlayerId && players.length > 0 && players[0]) {
+    state.league.activePlayerId = players[0].id || players[0].userId;
   }
 }
 

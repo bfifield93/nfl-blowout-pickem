@@ -58,19 +58,37 @@ export function mergeLeaguesFromSync(incomingData) {
   const currentMap = getAllLeagues();
   let changed = false;
 
+  const sanitizeLeague = (lg, idKey) => {
+    if (!lg || typeof lg !== 'object' || !lg.joinCode) return null;
+    const id = lg.id || idKey;
+    lg.id = id;
+    if (!lg.players || !Array.isArray(lg.players)) {
+      lg.players = [];
+    }
+    if (!lg.schedule || !Array.isArray(lg.schedule) || lg.schedule.length === 0) {
+      lg.schedule = DEFAULT_SCHEDULE;
+    } else {
+      lg.schedule = lg.schedule.map((w, index) => {
+        if (!w || !Array.isArray(w.games) || w.games.length === 0) {
+          return DEFAULT_SCHEDULE[index] || w || { week: index + 1, games: [] };
+        }
+        return w;
+      });
+    }
+    return lg;
+  };
+
   if (incomingData.id && incomingData.joinCode) {
-    currentMap[incomingData.id] = incomingData;
-    changed = true;
+    const sanitized = sanitizeLeague(incomingData, incomingData.id);
+    if (sanitized) {
+      currentMap[sanitized.id] = sanitized;
+      changed = true;
+    }
   } else if (typeof incomingData === 'object') {
     Object.keys(incomingData).forEach(key => {
-      const lg = incomingData[key];
-      if (lg && typeof lg === 'object' && lg.joinCode) {
-        const id = lg.id || key;
-        lg.id = id;
-        if (!lg.players || !Array.isArray(lg.players)) {
-          lg.players = [];
-        }
-        currentMap[id] = lg;
+      const sanitized = sanitizeLeague(incomingData[key], key);
+      if (sanitized) {
+        currentMap[sanitized.id] = sanitized;
         changed = true;
       }
     });

@@ -104,18 +104,25 @@ export function isTeamUsedByPlayer(playerPicks, teamId, currentWeek) {
 /**
  * Calculates complete season standings and weekly stats for all players.
  */
-export function calculateStandings(players, schedule) {
+export function calculateStandings(players = [], schedule = []) {
+  const safePlayers = Array.isArray(players) ? players : [];
+  const safeSchedule = Array.isArray(schedule) ? schedule : [];
+
   // Map schedule by week and team for fast lookup
   const gameMapByWeekAndTeam = {};
-  schedule.forEach(wData => {
-    gameMapByWeekAndTeam[wData.week] = {};
-    wData.games.forEach(g => {
-      gameMapByWeekAndTeam[wData.week][g.home] = g;
-      gameMapByWeekAndTeam[wData.week][g.away] = g;
+  safeSchedule.forEach(wData => {
+    if (!wData) return;
+    const weekNum = wData.week;
+    gameMapByWeekAndTeam[weekNum] = {};
+    const gamesList = Array.isArray(wData.games) ? wData.games : [];
+    gamesList.forEach(g => {
+      if (!g) return;
+      if (g.home) gameMapByWeekAndTeam[weekNum][g.home] = g;
+      if (g.away) gameMapByWeekAndTeam[weekNum][g.away] = g;
     });
   });
 
-  const standings = players.map(player => {
+  const standings = safePlayers.filter(Boolean).map(player => {
     let totalPoints = 0;
     let totalCorrectPicks = 0;
     let totalPicksMade = 0;
