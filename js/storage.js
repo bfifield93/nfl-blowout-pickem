@@ -208,29 +208,37 @@ export async function joinLeagueByCode(joinCode, user) {
     return { success: false, error: 'Please enter a valid Join Code (at least 2 characters).' };
   }
 
-  // 1. Pre-fetch latest leagues directly from Firebase REST
-  try {
-    const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
-    if (cloudRes.ok) {
-      const cloudLeagues = await cloudRes.json();
-      if (cloudLeagues) mergeLeaguesFromSync(cloudLeagues);
+  const findLeagueInList = (list) => {
+    let match = list.find(l => l && l.joinCode && sanitizeJoinCode(l.joinCode) === targetCode);
+    if (!match) match = list.find(l => l && l.joinCode && sanitizeJoinCode(l.joinCode).startsWith(targetCode));
+    if (!match) match = list.find(l => l && l.joinCode && targetCode.startsWith(sanitizeJoinCode(l.joinCode)));
+    return match;
+  };
+
+  // 1. Instant local search
+  let leaguesMap = getAllLeagues();
+  let league = findLeagueInList(Object.values(leaguesMap));
+
+  // 2. If not found locally, fetch latest cloud leagues from Firebase REST with 3s timeout
+  if (!league) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (cloudRes.ok) {
+        const cloudLeagues = await cloudRes.json();
+        if (cloudLeagues) {
+          mergeLeaguesFromSync(cloudLeagues);
+          leaguesMap = getAllLeagues();
+          league = findLeagueInList(Object.values(leaguesMap));
+        }
+      }
+    } catch (err) {
+      console.warn('Pre-join cloud fetch notice:', err);
     }
-  } catch (err) {
-    console.warn('Pre-join league cloud fetch notice:', err);
-  }
-
-  const leaguesMap = getAllLeagues();
-  const allLeagues = Object.values(leaguesMap);
-
-  // 2. Search exact or fuzzy code match
-  let league = allLeagues.find(l => l && l.joinCode && sanitizeJoinCode(l.joinCode) === targetCode);
-
-  if (!league) {
-    league = allLeagues.find(l => l && l.joinCode && sanitizeJoinCode(l.joinCode).startsWith(targetCode));
-  }
-
-  if (!league) {
-    league = allLeagues.find(l => l && l.joinCode && targetCode.startsWith(sanitizeJoinCode(l.joinCode)));
   }
 
   if (!league) {
@@ -261,15 +269,11 @@ export async function joinLeagueByCode(joinCode, user) {
   setActiveLeagueId(league.id);
 
   // 3. Direct REST PUT to Firebase Realtime Database
-  try {
-    await fetch(`${FIREBASE_REST_BASE_URL}/${league.id}.json`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(league)
-    });
-  } catch (err) {
-    console.error('Direct REST join league sync error:', err);
-  }
+  fetch(`${FIREBASE_REST_BASE_URL}/${league.id}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(league)
+  }).catch(err => console.error('Direct REST join league sync error:', err));
 
   return { success: true, league };
 }

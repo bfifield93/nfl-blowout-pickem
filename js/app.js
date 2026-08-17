@@ -1067,11 +1067,18 @@ function setupEventListeners() {
     }
   }
 
-  elements.btnSubmitCreateLeague?.addEventListener('click', handleCreateLeagueSubmit);
+  elements.btnSubmitCreateLeague?.addEventListener('click', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
   elements.formCreateLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleCreateLeagueSubmit(); });
 
-  elements.btnSubmitJoinLeague?.addEventListener('click', handleJoinLeagueSubmit);
+  elements.btnSubmitJoinLeague?.addEventListener('click', (e) => { e.preventDefault(); handleJoinLeagueSubmit(); });
   elements.formJoinLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleJoinLeagueSubmit(); });
+
+  document.getElementById('joinLeagueCode')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleJoinLeagueSubmit();
+    }
+  });
 
   // Delete League Handler (Master / Admin)
   document.addEventListener('click', async (e) => {
