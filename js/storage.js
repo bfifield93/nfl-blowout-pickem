@@ -1,12 +1,14 @@
 /**
  * storage.js
- * Multi-League Management & LocalStorage Persistence Engine.
+ * Multi-League Management & Direct Firebase Realtime Database Persistence Engine.
  */
 
 import { DEFAULT_SCHEDULE } from './nflData.js';
 
 const STORAGE_KEY_LEAGUES = 'nfl_pickem_leagues_v3';
 const STORAGE_KEY_ACTIVE_LEAGUE_ID = 'nfl_pickem_active_league_id_v3';
+const FIREBASE_REST_LEAGUES_URL = 'https://nfl-blowout-pickem-default-rtdb.firebaseio.com/leagues.json';
+const FIREBASE_REST_BASE_URL = 'https://nfl-blowout-pickem-default-rtdb.firebaseio.com/leagues';
 
 const DEFAULT_LEAGUE_DATA = {
   id: 'league_default',
@@ -49,14 +51,23 @@ export function saveAllLeagues(leaguesMap) {
 export function mergeLeaguesFromSync(incomingData) {
   if (!incomingData) return;
   const currentMap = getAllLeagues();
+  let changed = false;
 
-  if (incomingData.id) {
+  if (incomingData.id && incomingData.joinCode) {
     currentMap[incomingData.id] = incomingData;
+    changed = true;
   } else if (typeof incomingData === 'object') {
-    Object.assign(currentMap, incomingData);
+    Object.keys(incomingData).forEach(key => {
+      const lg = incomingData[key];
+      if (lg && lg.id && lg.joinCode) {
+        currentMap[lg.id] = lg;
+        changed = true;
+      }
+    });
   }
 
   saveAllLeagues(currentMap);
+  return changed;
 }
 
 export function getActiveLeagueId() {
@@ -90,18 +101,30 @@ export function loadLeagueData() {
   return activeLeague;
 }
 
-export function saveLeagueData(leagueData) {
+export async function saveLeagueData(leagueData) {
   if (!leagueData || !leagueData.id) return;
   const leaguesMap = getAllLeagues();
   leaguesMap[leagueData.id] = leagueData;
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(leagueData.id);
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('leagueUpdated', { detail: leagueData }));
   }
+
+  // Direct REST PUT to Firebase Realtime Database
+  try {
+    await fetch(`${FIREBASE_REST_BASE_URL}/${leagueData.id}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leagueData)
+    });
+  } catch (err) {
+    console.warn('Direct REST league save notice:', err);
+  }
 }
 
-export function createNewLeague(name, joinCode, creatorUser) {
+export async function createNewLeague(name, joinCode, creatorUser) {
   const cleanName = name.trim();
   const cleanCode = (joinCode || '').trim().toUpperCase();
 
@@ -112,8 +135,18 @@ export function createNewLeague(name, joinCode, creatorUser) {
     return { success: false, error: 'Join code must be at least 3 characters long.' };
   }
 
-  const leaguesMap = getAllLeagues();
+  // Pre-sync check from Firebase Database to make sure joinCode is not taken on cloud
+  try {
+    const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
+    if (cloudRes.ok) {
+      const cloudLeagues = await cloudRes.json();
+      if (cloudLeagues) mergeLeaguesFromSync(cloudLeagues);
+    }
+  } catch (err) {
+    console.warn('Pre-create league cloud fetch notice:', err);
+  }
 
+  const leaguesMap = getAllLeagues();
   if (Object.values(leaguesMap).some(l => l.joinCode === cleanCode)) {
     return { success: false, error: 'Join code already in use by another league.' };
   }
@@ -130,7 +163,7 @@ export function createNewLeague(name, joinCode, creatorUser) {
     id: newLeagueId,
     leagueName: cleanName,
     joinCode: cleanCode,
-    adminUserId: creatorUser ? creatorUser.userId : creatorPlayer.id,
+    adminUserId: creatorUser ? (creatorUser.userId || creatorUser.id) : creatorPlayer.id,
     currentWeek: 1,
     activePlayerId: creatorPlayer.id,
     players: [creatorPlayer],
@@ -142,20 +175,43 @@ export function createNewLeague(name, joinCode, creatorUser) {
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(newLeagueId);
 
+  // Direct REST PUT to Firebase Realtime Database
+  try {
+    const putRes = await fetch(`${FIREBASE_REST_BASE_URL}/${newLeagueId}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLeague)
+    });
+    console.log('⚡ Direct REST league creation sync status:', putRes.status);
+  } catch (err) {
+    console.error('Direct REST league create error:', err);
+  }
+
   return { success: true, league: newLeague };
 }
 
-export function joinLeagueByCode(joinCode, user) {
+export async function joinLeagueByCode(joinCode, user) {
   const cleanCode = (joinCode || '').trim().toUpperCase();
   if (!cleanCode) {
     return { success: false, error: 'Please enter a valid Join Code.' };
+  }
+
+  // Pre-sync check from Firebase Database to fetch latest cloud leagues before checking code
+  try {
+    const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
+    if (cloudRes.ok) {
+      const cloudLeagues = await cloudRes.json();
+      if (cloudLeagues) mergeLeaguesFromSync(cloudLeagues);
+    }
+  } catch (err) {
+    console.warn('Pre-join league cloud fetch notice:', err);
   }
 
   const leaguesMap = getAllLeagues();
   const league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
 
   if (!league) {
-    return { success: false, error: 'League not found with that Join Code.' };
+    return { success: false, error: 'League not found with that Join Code. Please verify code.' };
   }
 
   const userId = user ? (user.userId || user.id) : 'p_user';
@@ -175,6 +231,17 @@ export function joinLeagueByCode(joinCode, user) {
   leaguesMap[league.id] = league;
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(league.id);
+
+  // Direct REST PUT to Firebase Realtime Database
+  try {
+    await fetch(`${FIREBASE_REST_BASE_URL}/${league.id}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(league)
+    });
+  } catch (err) {
+    console.error('Direct REST join league sync error:', err);
+  }
 
   return { success: true, league };
 }

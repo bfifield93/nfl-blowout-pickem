@@ -827,7 +827,7 @@ function setupEventListeners() {
     renderMyLeaguesList();
   });
 
-  elements.formCreateLeague?.addEventListener('submit', (e) => {
+  elements.formCreateLeague?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser) {
@@ -839,15 +839,15 @@ function setupEventListeners() {
     const name = document.getElementById('createLeagueName').value;
     const code = document.getElementById('createLeagueCode').value;
 
-    const res = createNewLeague(name, code, currentUser);
+    showToast('Creating league & logging to Firebase...');
+    const res = await createNewLeague(name, code, currentUser);
     if (res.success) {
       state.league = res.league;
-      syncLeagueToCloud(state.league);
       elements.modalLeagueHub?.classList.remove('active');
       document.getElementById('createLeagueName').value = '';
       document.getElementById('createLeagueCode').value = '';
       renderAll();
-      showToast(`🏆 Created & launched "${res.league.leagueName}"! You are Commissioner.`);
+      showToast(`🏆 Created & launched "${res.league.leagueName}"! Join Code: ${res.league.joinCode}`);
     } else {
       showToast(res.error, 'error');
     }
@@ -863,19 +863,11 @@ function setupEventListeners() {
     }
 
     const code = document.getElementById('joinLeagueCode').value;
-    let res = joinLeagueByCode(code, currentUser);
-
-    if (!res.success) {
-      const cloudLeagues = await fetchLeaguesFromCloud();
-      if (cloudLeagues) {
-        mergeLeaguesFromSync(cloudLeagues);
-        res = joinLeagueByCode(code, currentUser);
-      }
-    }
+    showToast('Searching Firebase Cloud for league...');
+    const res = await joinLeagueByCode(code, currentUser);
 
     if (res.success) {
       state.league = res.league;
-      syncLeagueToCloud(state.league);
       elements.modalLeagueHub?.classList.remove('active');
       document.getElementById('joinLeagueCode').value = '';
       renderAll();
