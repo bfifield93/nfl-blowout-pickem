@@ -44,6 +44,8 @@ import {
   getSavedFirebaseConfig,
   saveFirebaseConfig,
   subscribeToRealtimeCloudUpdates,
+  fetchAccountsFromCloud,
+  fetchLeaguesFromCloud,
   isCloudActive
 } from './cloudDb.js';
 
@@ -79,10 +81,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Initialize Cloud Database if configured
+  // Initialize Cloud Database & Perform Initial Sync
   const cloudRes = await initCloudDatabase();
-  if (cloudRes.success) {
-    showToast('⚡ Connected to Firebase Realtime Database!');
+
+  const [initialAccounts, initialLeagues] = await Promise.all([
+    fetchAccountsFromCloud(),
+    fetchLeaguesFromCloud()
+  ]);
+
+  if (initialAccounts) mergeAccountsFromSync(initialAccounts);
+  if (initialLeagues) mergeLeaguesFromSync(initialLeagues);
+
+  state.league = loadLeagueData();
+
+  if (cloudRes.success && cloudRes.mode === 'CUSTOM_FIREBASE') {
+    showToast('⚡ Connected to custom Firebase Database!');
     subscribeToRealtimeCloudUpdates(
       (updatedLeagues) => {
         if (updatedLeagues) {

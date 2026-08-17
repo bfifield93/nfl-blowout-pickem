@@ -187,3 +187,43 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
 export function isCloudActive() {
   return isCloudConnected;
 }
+
+export async function fetchAccountsFromCloud() {
+  const config = getSavedFirebaseConfig();
+  if (config && firebaseDb) {
+    try {
+      const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      const snapshot = await get(ref(firebaseDb, 'accounts'));
+      if (snapshot.exists()) return snapshot.val();
+    } catch (err) {
+      console.error('Error fetching accounts from Firebase:', err);
+    }
+  }
+
+  try {
+    const res = await fetch('https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/accounts');
+    if (res.ok) return await res.json();
+  } catch (e) {}
+
+  return null;
+}
+
+export async function fetchLeaguesFromCloud() {
+  const config = getSavedFirebaseConfig();
+  if (config && firebaseDb) {
+    try {
+      const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      const snapshot = await get(ref(firebaseDb, 'leagues'));
+      if (snapshot.exists()) return snapshot.val();
+    } catch (err) {
+      console.error('Error fetching leagues from Firebase:', err);
+    }
+  }
+
+  try {
+    const res = await fetch('https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/leagues');
+    if (res.ok) return await res.json();
+  } catch (e) {}
+
+  return null;
+}

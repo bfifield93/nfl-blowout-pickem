@@ -107,8 +107,17 @@ export function setCurrentSession(sessionData) {
 
 export async function loginUser(username, password) {
   const cleanUsername = username.trim().toLowerCase();
-  const accounts = getAccounts();
-  const account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
+  let accounts = getAccounts();
+  let account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
+
+  if (!account) {
+    const cloudAccounts = await fetchAccountsFromCloud();
+    if (cloudAccounts && Array.isArray(cloudAccounts)) {
+      mergeAccountsFromSync(cloudAccounts);
+      accounts = getAccounts();
+      account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
+    }
+  }
 
   if (!account) {
     return { success: false, error: 'User account not found.' };

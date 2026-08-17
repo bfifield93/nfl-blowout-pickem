@@ -146,14 +146,25 @@ export function createNewLeague(name, joinCode, creatorUser) {
   return { success: true, league: newLeague };
 }
 
-export function joinLeagueByCode(joinCode, user) {
+import { syncLeagueToCloud, fetchLeaguesFromCloud } from './cloudDb.js';
+
+export async function joinLeagueByCode(joinCode, user) {
   const cleanCode = (joinCode || '').trim().toUpperCase();
   if (!cleanCode) {
     return { success: false, error: 'Please enter a valid Join Code.' };
   }
 
-  const leaguesMap = getAllLeagues();
-  const league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
+  let leaguesMap = getAllLeagues();
+  let league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
+
+  if (!league) {
+    const cloudLeagues = await fetchLeaguesFromCloud();
+    if (cloudLeagues) {
+      mergeLeaguesFromSync(cloudLeagues);
+      leaguesMap = getAllLeagues();
+      league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
+    }
+  }
 
   if (!league) {
     return { success: false, error: 'League not found with that Join Code.' };
