@@ -18,6 +18,7 @@ import {
   setActiveLeagueId,
   createNewLeague,
   joinLeagueByCode,
+  deleteLeague,
   getUserLeagues,
   isLeagueAdmin,
   mergeLeaguesFromSync,
@@ -287,6 +288,11 @@ function renderMyLeaguesList() {
 
   const userId = currentUser.userId || currentUser.id;
   const userLeagues = getUserLeagues(userId);
+  const isMasterAdmin = isAdmin() || currentUser.username === 'master';
+
+  if (elements.tabLeagueAdmin) {
+    elements.tabLeagueAdmin.style.display = isMasterAdmin ? 'block' : 'none';
+  }
 
   if (userLeagues.length === 0) {
     elements.myLeaguesList.innerHTML = `
@@ -298,11 +304,11 @@ function renderMyLeaguesList() {
   }
 
   elements.myLeaguesList.innerHTML = userLeagues.map(l => {
-    const isCreator = l.adminUserId === userId || isAdmin();
+    const isCreator = l.adminUserId === userId || isMasterAdmin;
     const isActive = l.id === state.league?.id;
 
     return `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); flex-wrap: wrap; gap: 8px;">
         <div>
           <div style="font-weight: 800; font-size: 1rem; color: #FFF;">
             ${l.leagueName}
@@ -319,10 +325,54 @@ function renderMyLeaguesList() {
           <button class="btn btn-secondary btn-switch-league" data-league-id="${l.id}" style="padding: 6px 12px; font-size: 0.8rem;" ${isActive ? 'disabled' : ''}>
             ${isActive ? 'Selected' : 'Switch'}
           </button>
+          ${isMasterAdmin ? `<button class="btn btn-delete-league" data-league-id="${l.id}" data-league-name="${l.leagueName}" style="padding: 6px 10px; font-size: 0.75rem; background: #DC2626; color: #FFF; border: none; border-radius: var(--radius-sm); cursor: pointer;" title="Delete League (Master Admin)">🗑️ Delete</button>` : ''}
         </div>
       </div>
     `;
   }).join('');
+}
+
+function renderAdminMasterPanel() {
+  if (!elements.containerAdminMaster) return;
+  const currentUser = getCurrentUser();
+  const isMasterAdmin = isAdmin() || currentUser?.username === 'master';
+
+  if (!isMasterAdmin) {
+    elements.containerAdminMaster.style.display = 'none';
+    return;
+  }
+
+  const leaguesMap = getAllLeagues();
+  const allLeagues = Object.values(leaguesMap);
+  const accounts = getAccounts();
+
+  const leaguesListEl = document.getElementById('adminAllLeaguesList');
+  if (leaguesListEl) {
+    leaguesListEl.innerHTML = allLeagues.map(l => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+        <div>
+          <strong style="color: #FFF; font-size: 0.85rem;">${l.leagueName}</strong>
+          <span style="font-size: 0.75rem; color: var(--color-gold); margin-left: 8px;">Code: ${l.joinCode}</span>
+        </div>
+        <button class="btn btn-delete-league" data-league-id="${l.id}" data-league-name="${l.leagueName}" style="padding: 4px 8px; font-size: 0.75rem; background: #DC2626; color: #FFF; border: none; border-radius: 4px; cursor: pointer;">🗑️ Delete League</button>
+      </div>
+    `).join('');
+  }
+
+  const accountsListEl = document.getElementById('adminAllAccountsList');
+  if (accountsListEl) {
+    accountsListEl.innerHTML = accounts.map(a => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+        <div>
+          <span style="font-size: 1rem;">${a.avatar || '🏈'}</span>
+          <strong style="color: #FFF; font-size: 0.85rem; margin-left: 6px;">${a.name}</strong>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 6px;">(@${a.username})</span>
+          ${a.role === 'ADMIN' ? '<span style="font-size: 0.65rem; background: rgba(255,184,28,0.2); color: var(--color-gold); padding: 2px 4px; border-radius: 3px; margin-left: 4px; font-weight: 800;">ADMIN</span>' : ''}
+        </div>
+        ${a.username !== 'master' ? `<button class="btn btn-delete-account" data-user-id="${a.id}" data-username="${a.username}" style="padding: 4px 8px; font-size: 0.75rem; background: #DC2626; color: #FFF; border: none; border-radius: 4px; cursor: pointer;">🗑️ Delete User</button>` : '<span style="font-size: 0.7rem; color: var(--color-gold); font-weight: 800;">MASTER</span>'}
+      </div>
+    `).join('');
+  }
 }
 
 function renderLandingScores() {
@@ -919,14 +969,27 @@ function setupEventListeners() {
     renderMyLeaguesList();
   });
 
+  elements.tabLeagueAdmin?.addEventListener('click', () => {
+    if (elements.formCreateLeague) elements.formCreateLeague.style.display = 'none';
+    if (elements.formJoinLeague) elements.formJoinLeague.style.display = 'none';
+    if (elements.containerMyLeagues) elements.containerMyLeagues.style.display = 'none';
+    if (elements.containerAdminMaster) elements.containerAdminMaster.style.display = 'block';
+    elements.tabLeagueAdmin?.classList.add('active');
+    elements.tabLeagueCreate?.classList.remove('active');
+    elements.tabLeagueJoin?.classList.remove('active');
+    elements.tabLeagueMy?.classList.remove('active');
+    renderAdminMasterPanel();
+  });
+
   async function handleCreateLeagueSubmit() {
     const errEl = document.getElementById('createLeagueError');
     if (errEl) errEl.style.display = 'none';
 
     const currentUser = getCurrentUser();
     if (!currentUser) {
-      showToast('🔐 Please sign in first!', 'error');
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       elements.modalAuth?.classList.add('active');
+      showToast('🔐 Please sign in or register an account to create leagues!', 'error');
       return;
     }
 
@@ -967,8 +1030,9 @@ function setupEventListeners() {
 
     const currentUser = getCurrentUser();
     if (!currentUser) {
-      showToast('🔐 Please sign in first!', 'error');
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       elements.modalAuth?.classList.add('active');
+      showToast('🔐 Please sign in or register an account to join leagues!', 'error');
       return;
     }
 
@@ -1009,16 +1073,44 @@ function setupEventListeners() {
   elements.btnSubmitJoinLeague?.addEventListener('click', handleJoinLeagueSubmit);
   elements.formJoinLeague?.addEventListener('submit', (e) => { e.preventDefault(); handleJoinLeagueSubmit(); });
 
-  elements.containerMyLeagues?.addEventListener('click', (e) => {
-    const switchBtn = e.target.closest('.btn-switch-league');
-    if (!switchBtn) return;
+  // Delete League Handler (Master / Admin)
+  document.addEventListener('click', async (e) => {
+    const delLeagueBtn = e.target.closest('.btn-delete-league');
+    if (delLeagueBtn) {
+      const leagueId = delLeagueBtn.dataset.leagueId;
+      const leagueName = delLeagueBtn.dataset.leagueName || 'this league';
+      
+      if (confirm(`⚠️ Are you sure you want to permanently delete "${leagueName}"?`)) {
+        const res = await deleteLeague(leagueId);
+        if (res.success) {
+          state.league = loadLeagueData();
+          renderAll();
+          renderAdminMasterPanel();
+          showToast(`🗑️ League "${leagueName}" deleted successfully!`);
+        } else {
+          showToast(res.error, 'error');
+        }
+      }
+      return;
+    }
 
-    const leagueId = switchBtn.dataset.leagueId;
-    setActiveLeagueId(leagueId);
-    state.league = loadLeagueData();
-    elements.modalLeagueHub?.classList.remove('active');
-    renderAll();
-    showToast(`Switched to league: ${state.league.leagueName}`);
+    const delUserBtn = e.target.closest('.btn-delete-account');
+    if (delUserBtn) {
+      const userId = delUserBtn.dataset.userId;
+      const username = delUserBtn.dataset.username || 'this user';
+
+      if (confirm(`⚠️ Are you sure you want to permanently delete account @${username}?`)) {
+        const res = adminDeleteUser(userId);
+        if (res.success) {
+          renderAll();
+          renderAdminMasterPanel();
+          showToast(`🗑️ Account @${username} deleted!`);
+        } else {
+          showToast(res.error, 'error');
+        }
+      }
+      return;
+    }
   });
 
   // Navigation Tabs

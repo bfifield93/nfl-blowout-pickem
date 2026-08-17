@@ -328,6 +328,37 @@ export function importLeagueJson(jsonString) {
   }
 }
 
+export async function deleteLeague(leagueId) {
+  const leaguesMap = getAllLeagues();
+  if (!leaguesMap[leagueId]) {
+    return { success: false, error: 'League not found.' };
+  }
+
+  delete leaguesMap[leagueId];
+  saveAllLeagues(leaguesMap);
+
+  const activeId = getActiveLeagueId();
+  if (activeId === leagueId) {
+    const remainingKeys = Object.keys(leaguesMap);
+    if (remainingKeys.length > 0) {
+      setActiveLeagueId(remainingKeys[0]);
+    } else {
+      resetToDefaultLeague();
+    }
+  }
+
+  // Delete from Firebase REST Database
+  try {
+    await fetch(`${FIREBASE_REST_BASE_URL}/${leagueId}.json`, {
+      method: 'DELETE'
+    });
+  } catch (err) {
+    console.warn('Direct REST delete league notice:', err);
+  }
+
+  return { success: true };
+}
+
 export function resetToDefaultLeague() {
   const leaguesMap = { [DEFAULT_LEAGUE_DATA.id]: DEFAULT_LEAGUE_DATA };
   saveAllLeagues(leaguesMap);

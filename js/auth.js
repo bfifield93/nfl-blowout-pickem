@@ -31,6 +31,14 @@ async function hashPassword(password) {
 
 const DEFAULT_ACCOUNTS = [
   {
+    id: 'u_master',
+    username: 'master',
+    name: 'Master Admin',
+    avatar: '👑',
+    role: 'ADMIN',
+    passwordHash: 'b5e8184907709e73b274e23a7502d6b6ccdd3ce387d6d96881fb96852fa19578' // 'nbpisdynamite25'
+  },
+  {
     id: 'p_admin',
     username: 'admin',
     name: 'Commissioner Admin',
@@ -59,11 +67,14 @@ const DEFAULT_ACCOUNTS = [
 export function getAccounts() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_ACCOUNTS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(DEFAULT_ACCOUNTS));
-      return DEFAULT_ACCOUNTS;
+    let accounts = raw ? JSON.parse(raw) : DEFAULT_ACCOUNTS;
+
+    // Guarantee master admin account exists
+    if (!accounts.some(a => a.username === 'master')) {
+      accounts.unshift(DEFAULT_ACCOUNTS[0]);
+      localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(accounts));
     }
-    return JSON.parse(raw);
+    return accounts;
   } catch (err) {
     console.error('Error reading accounts:', err);
     return DEFAULT_ACCOUNTS;
