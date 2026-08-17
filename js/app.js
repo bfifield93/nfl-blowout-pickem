@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
       }
 
-      if (cloudRes.success && cloudRes.mode === 'CUSTOM_FIREBASE') {
+      if (cloudRes.success) {
         subscribeToRealtimeCloudUpdates(
           (updatedLeagues) => {
             if (updatedLeagues) {

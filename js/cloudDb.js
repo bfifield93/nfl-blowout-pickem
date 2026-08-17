@@ -8,11 +8,22 @@
 const STORAGE_KEY_FIREBASE_CONFIG = 'nfl_pickem_firebase_config_v1';
 const BROADCAST_CHANNEL_NAME = 'nfl_blowout_pickem_broadcast_v1';
 
+// Default User Firebase Realtime Database Configuration
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCmfNbIxHFJGUgpLQp_fuDkzO8LUCyMoQs",
+  authDomain: "nfl-blowout-pickem.firebaseapp.com",
+  databaseURL: "https://nfl-blowout-pickem-default-rtdb.firebaseio.com",
+  projectId: "nfl-blowout-pickem",
+  storageBucket: "nfl-blowout-pickem.firebasestorage.app",
+  messagingSenderId: "472126067885",
+  appId: "1:472126067885:web:e820a1e8decf0bd4466224",
+  measurementId: "G-GX0LJCVVFJ"
+};
+
 let firebaseApp = null;
 let firebaseDb = null;
 let broadcastChannel = null;
 let isCloudConnected = false;
-let autoPollInterval = null;
 
 // 1. Multi-Browser BroadcastChannel Setup
 export function initBroadcastSync(onSyncCallback) {
@@ -40,14 +51,14 @@ export function broadcastDataUpdate(type, payload) {
   }
 }
 
-// 2. Saved Firebase Config
+// 2. Saved / Default Firebase Config
 export function getSavedFirebaseConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_FIREBASE_CONFIG);
-    if (!raw) return null;
+    if (!raw) return DEFAULT_FIREBASE_CONFIG;
     return JSON.parse(raw);
   } catch (err) {
-    return null;
+    return DEFAULT_FIREBASE_CONFIG;
   }
 }
 
@@ -60,7 +71,7 @@ export function saveFirebaseConfig(config) {
 }
 
 export async function initCloudDatabase() {
-  const config = getSavedFirebaseConfig();
+  const config = getSavedFirebaseConfig() || DEFAULT_FIREBASE_CONFIG;
 
   if (config && config.apiKey && config.databaseURL) {
     try {
@@ -70,15 +81,15 @@ export async function initCloudDatabase() {
       firebaseApp = initializeApp(config);
       firebaseDb = getDatabase(firebaseApp);
       isCloudConnected = true;
-      console.log('⚡ Connected to custom Firebase Database!');
-      return { success: true, mode: 'CUSTOM_FIREBASE' };
+      console.log('⚡ Connected to Firebase Realtime Database (nfl-blowout-pickem)!');
+      return { success: true, mode: 'FIREBASE' };
     } catch (err) {
-      console.warn('Firebase custom init error:', err);
+      console.warn('Firebase init error:', err);
     }
   }
 
-  isCloudConnected = true;
-  return { success: true, mode: 'BROADCAST_ONLY' };
+  isCloudConnected = false;
+  return { success: false, mode: 'BROADCAST_ONLY' };
 }
 
 export async function syncLeagueToCloud(leagueData) {
@@ -87,15 +98,13 @@ export async function syncLeagueToCloud(leagueData) {
   // Broadcast to other local browser windows/tabs immediately
   broadcastDataUpdate('LEAGUE_UPDATE', leagueData);
 
-  // Custom Firebase Sync
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
+  if (firebaseDb) {
     try {
       const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       await set(ref(firebaseDb, `leagues/${leagueData.id}`), leagueData);
       return { success: true };
     } catch (err) {
-      console.error('Error syncing league to custom Firebase:', err);
+      console.error('Error syncing league to Firebase:', err);
     }
   }
 }
@@ -106,22 +115,19 @@ export async function syncAccountsToCloud(accounts) {
   // Broadcast to other local browser windows/tabs immediately
   broadcastDataUpdate('ACCOUNTS_UPDATE', accounts);
 
-  // Custom Firebase Sync
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
+  if (firebaseDb) {
     try {
       const { ref, set } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       await set(ref(firebaseDb, 'accounts'), accounts);
       return { success: true };
     } catch (err) {
-      console.error('Error syncing accounts to custom Firebase:', err);
+      console.error('Error syncing accounts to Firebase:', err);
     }
   }
 }
 
 export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccountsUpdate) {
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
+  if (firebaseDb) {
     try {
       const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       
@@ -137,18 +143,17 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
         }
       });
     } catch (err) {
-      console.error('Error subscribing to custom Firebase:', err);
+      console.error('Error subscribing to Firebase:', err);
     }
   }
 }
 
 export function isCloudActive() {
-  return isCloudConnected;
+  return isCloudConnected && !!firebaseDb;
 }
 
 export async function fetchAccountsFromCloud() {
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
+  if (firebaseDb) {
     try {
       const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       const snapshot = await get(ref(firebaseDb, 'accounts'));
@@ -161,8 +166,7 @@ export async function fetchAccountsFromCloud() {
 }
 
 export async function fetchLeaguesFromCloud() {
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
+  if (firebaseDb) {
     try {
       const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       const snapshot = await get(ref(firebaseDb, 'leagues'));
