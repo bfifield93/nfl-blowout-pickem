@@ -325,7 +325,7 @@
       </div>
 
       <!-- Create League Form -->
-      <form id="formCreateLeague" onsubmit="window.doCreateLeague && window.doCreateLeague(event); return false;">
+      <form id="formCreateLeague" onsubmit="doCreateLeague(event); return false;">
         <div style="margin-bottom: 14px;">
           <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">League Name</label>
           <input type="text" id="createLeagueName" placeholder="e.g. Sunday Football Pool 2026" required style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF;">
@@ -342,11 +342,11 @@
 
         <div id="createLeagueError" style="display: none; color: #FF4D4D; background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); padding: 8px 12px; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 14px; font-weight: 700;"></div>
 
-        <button id="btnSubmitCreateLeague" type="button" onclick="window.doCreateLeague && window.doCreateLeague(event)" class="btn btn-primary" style="width: 100%; justify-content: center;">Create & Launch League</button>
+        <button id="btnSubmitCreateLeague" type="button" onclick="doCreateLeague(event)" class="btn btn-primary" style="width: 100%; justify-content: center;">Create & Launch League</button>
       </form>
 
       <!-- Join League Form -->
-      <form id="formJoinLeague" onsubmit="window.doJoinLeague && window.doJoinLeague(event); return false;" style="display: none;">
+      <form id="formJoinLeague" onsubmit="doJoinLeague(event); return false;" style="display: none;">
         <div style="margin-bottom: 20px;">
           <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">Enter Join Code</label>
           <input type="text" id="joinLeagueCode" placeholder="e.g. BLOWOUT2026" required style="width: 100%; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: #FFF; text-transform: uppercase; font-size: 1.1rem; font-weight: 800; text-align: center;">
@@ -354,7 +354,7 @@
 
         <div id="joinLeagueError" style="display: none; color: #FF4D4D; background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); padding: 8px 12px; border-radius: var(--radius-md); font-size: 0.8rem; margin-bottom: 14px; font-weight: 700;"></div>
 
-        <button id="btnSubmitJoinLeague" type="button" onclick="window.doJoinLeague && window.doJoinLeague(event)" class="btn btn-primary" style="width: 100%; justify-content: center;">Join League</button>
+        <button id="btnSubmitJoinLeague" type="button" onclick="doJoinLeague(event)" class="btn btn-primary" style="width: 100%; justify-content: center;">Join League</button>
       </form>
 
       <!-- My Leagues List -->

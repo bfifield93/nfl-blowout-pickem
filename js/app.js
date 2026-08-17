@@ -67,6 +67,17 @@ const elements = new Proxy({}, {
   }
 });
 
+// Top-Level Immediate Global Handlers - Guaranteed defined at 0ms script load!
+window.doJoinLeague = function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  handleJoinLeagueSubmit(e);
+};
+
+window.doCreateLeague = function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  handleCreateLeagueSubmit(e);
+};
+
 // Initialize Application
 function initApp() {
   setupEventListeners();
@@ -1045,43 +1056,49 @@ function setupEventListeners() {
     const errEl = document.getElementById('joinLeagueError');
     if (errEl) errEl.style.display = 'none';
 
-    const codeInput = document.getElementById('joinLeagueCode');
-    const code = codeInput ? codeInput.value : '';
+    try {
+      const codeInput = document.getElementById('joinLeagueCode');
+      const code = codeInput ? codeInput.value : '';
 
-    if (!code || code.trim().length === 0) {
-      if (errEl) {
-        errEl.textContent = 'Please enter an Invite Join Code.';
-        errEl.style.display = 'block';
+      if (!code || code.trim().length === 0) {
+        if (errEl) {
+          errEl.textContent = 'Please enter an Invite Join Code.';
+          errEl.style.display = 'block';
+        }
+        alert('⚠️ Please enter an Invite Join Code in the text box!');
+        return;
       }
-      alert('Please enter an Invite Join Code.');
-      return;
-    }
 
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-      elements.modalAuth?.classList.add('active');
-      alert('🔐 Please sign in or register an account to join leagues!');
-      return;
-    }
-
-    showToast('Checking Firebase Cloud for league...');
-    const res = await joinLeagueByCode(code, currentUser);
-
-    if (res.success) {
-      setActiveLeagueId(res.league.id);
-      state.league = res.league;
-      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-      if (codeInput) codeInput.value = '';
-      renderAll();
-      showToast(`🏆 Joined "${res.league.leagueName}"!`);
-      alert(`🏆 Successfully joined "${res.league.leagueName}"!`);
-    } else {
-      if (errEl) {
-        errEl.textContent = res.error;
-        errEl.style.display = 'block';
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        const authModal = document.getElementById('modalAuth');
+        if (authModal) authModal.classList.add('active');
+        alert('🔐 Please sign in or register an account to join leagues!');
+        return;
       }
-      alert(`Join Error: ${res.error}`);
+
+      showToast('Checking Firebase Cloud for league...');
+      const res = await joinLeagueByCode(code, currentUser);
+
+      if (res.success) {
+        setActiveLeagueId(res.league.id);
+        state.league = res.league;
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        if (codeInput) codeInput.value = '';
+        renderAll();
+        showToast(`🏆 Joined "${res.league.leagueName}"!`);
+        alert(`🏆 Successfully joined "${res.league.leagueName}"!`);
+      } else {
+        if (errEl) {
+          errEl.textContent = res.error;
+          errEl.style.display = 'block';
+        }
+        alert(`❌ Join Error: ${res.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Unexpected Error: ${err.message || err}`);
+      console.error('handleJoinLeagueSubmit exception:', err);
     }
   }
 
