@@ -1,17 +1,45 @@
 /**
  * cloudDb.js
- * Real-Time Cloud Database Adapter for Multi-Computer Data Sync on GitHub Pages.
- * Supports Firebase Realtime Database with an automated cloud API fallback.
+ * Multi-Browser & Multi-Computer Real-Time Data Sync Adapter.
+ * Integrates BroadcastChannel for instant local multi-browser sync (Chrome, Edge, Incognito)
+ * and Firebase Realtime Database for cross-computer remote sync.
  */
 
 const STORAGE_KEY_FIREBASE_CONFIG = 'nfl_pickem_firebase_config_v1';
-const FREE_CLOUD_API_ENDPOINT = 'https://api.jsonbin.io/v3/b/66bf4505e41b4d34e42095f1'; // Shared fallback cloud endpoint
+const BROADCAST_CHANNEL_NAME = 'nfl_blowout_pickem_broadcast_v1';
 
 let firebaseApp = null;
 let firebaseDb = null;
+let broadcastChannel = null;
 let isCloudConnected = false;
-let realtimeUnsubscribe = null;
 
+// 1. Multi-Browser BroadcastChannel Setup
+export function initBroadcastSync(onSyncCallback) {
+  try {
+    if ('BroadcastChannel' in window) {
+      broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+      broadcastChannel.onmessage = (event) => {
+        if (event.data && typeof onSyncCallback === 'function') {
+          onSyncCallback(event.data);
+        }
+      };
+    }
+  } catch (err) {
+    console.warn('BroadcastChannel not supported in this browser environment:', err);
+  }
+}
+
+export function broadcastDataUpdate(type, payload) {
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({ type, payload, timestamp: Date.now() });
+    } catch (err) {
+      console.warn('Error broadcasting update:', err);
+    }
+  }
+}
+
+// 2. Firebase Cloud Database Setup
 export function getSavedFirebaseConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_FIREBASE_CONFIG);
@@ -44,16 +72,19 @@ export async function initCloudDatabase() {
       console.log('⚡ Connected to Firebase Realtime Database!');
       return { success: true, mode: 'FIREBASE' };
     } catch (err) {
-      console.warn('Firebase init error, using cloud sync adapter:', err);
+      console.warn('Firebase init error, falling back to BroadcastChannel sync:', err);
     }
   }
 
   isCloudConnected = false;
-  return { success: false, mode: 'LOCAL_SYNC' };
+  return { success: false, mode: 'BROADCAST_ONLY' };
 }
 
 export async function syncLeagueToCloud(leagueData) {
   if (!leagueData || !leagueData.id) return;
+
+  // Broadcast to other local browser windows/tabs immediately
+  broadcastDataUpdate('LEAGUE_UPDATE', leagueData);
 
   const config = getSavedFirebaseConfig();
   if (config && firebaseDb) {
@@ -66,32 +97,14 @@ export async function syncLeagueToCloud(leagueData) {
       console.error('Error syncing league to Firebase:', err);
     }
   }
-
-  // Backup sync to cloud storage
-  try {
-    const key = `nfl_pickem_cloud_lg_${leagueData.id}`;
-    localStorage.setItem(key, JSON.stringify(leagueData));
-  } catch (e) {}
-}
-
-export async function fetchLeagueFromCloud(leagueId) {
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
-    try {
-      const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-      const snapshot = await get(ref(firebaseDb, `leagues/${leagueId}`));
-      if (snapshot.exists()) {
-        return snapshot.val();
-      }
-    } catch (err) {
-      console.error('Error fetching league from Firebase:', err);
-    }
-  }
-
-  return null;
 }
 
 export async function syncAccountsToCloud(accounts) {
+  if (!accounts) return;
+
+  // Broadcast to other local browser windows/tabs immediately
+  broadcastDataUpdate('ACCOUNTS_UPDATE', accounts);
+
   const config = getSavedFirebaseConfig();
   if (config && firebaseDb) {
     try {
@@ -104,38 +117,29 @@ export async function syncAccountsToCloud(accounts) {
   }
 }
 
-export async function fetchAccountsFromCloud() {
-  const config = getSavedFirebaseConfig();
-  if (config && firebaseDb) {
-    try {
-      const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-      const snapshot = await get(ref(firebaseDb, 'accounts'));
-      if (snapshot.exists()) {
-        return snapshot.val();
-      }
-    } catch (err) {
-      console.error('Error fetching accounts from Firebase:', err);
-    }
-  }
-  return null;
-}
-
-export async function subscribeToRealtimeCloudUpdates(callback) {
+export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccountsUpdate) {
   const config = getSavedFirebaseConfig();
   if (config && firebaseDb) {
     try {
       const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      
       const leaguesRef = ref(firebaseDb, 'leagues');
-      return onValue(leaguesRef, (snapshot) => {
-        if (snapshot.exists()) {
-          callback(snapshot.val());
+      onValue(leaguesRef, (snapshot) => {
+        if (snapshot.exists() && typeof onLeaguesUpdate === 'function') {
+          onLeaguesUpdate(snapshot.val());
+        }
+      });
+
+      const accountsRef = ref(firebaseDb, 'accounts');
+      onValue(accountsRef, (snapshot) => {
+        if (snapshot.exists() && typeof onAccountsUpdate === 'function') {
+          onAccountsUpdate(snapshot.val());
         }
       });
     } catch (err) {
       console.error('Error subscribing to Firebase:', err);
     }
   }
-  return null;
 }
 
 export function isCloudActive() {

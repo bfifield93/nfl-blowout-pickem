@@ -67,6 +67,26 @@ export function saveAccounts(accounts) {
   }
 }
 
+export function mergeAccountsFromSync(incomingAccounts) {
+  if (!incomingAccounts || !Array.isArray(incomingAccounts)) return;
+  const currentAccounts = getAccounts();
+
+  incomingAccounts.forEach(inc => {
+    const existingIdx = currentAccounts.findIndex(a => a.id === inc.id || a.username.toLowerCase() === inc.username.toLowerCase());
+    if (existingIdx >= 0) {
+      currentAccounts[existingIdx] = { ...currentAccounts[existingIdx], ...inc };
+    } else {
+      currentAccounts.push(inc);
+    }
+  });
+
+  try {
+    localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(currentAccounts));
+  } catch (err) {
+    console.error('Error saving merged accounts:', err);
+  }
+}
+
 export function getCurrentSession() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_SESSION);

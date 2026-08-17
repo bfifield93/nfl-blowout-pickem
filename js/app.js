@@ -20,6 +20,7 @@ import {
   joinLeagueByCode,
   getUserLeagues,
   isLeagueAdmin,
+  mergeLeaguesFromSync,
   exportLeagueJson,
   importLeagueJson,
   resetToDefaultLeague
@@ -34,10 +35,12 @@ import {
   logoutUser,
   isAdmin,
   adminUpdateUser,
-  adminDeleteUser
+  adminDeleteUser,
+  mergeAccountsFromSync
 } from './auth.js';
 import {
   initCloudDatabase,
+  initBroadcastSync,
   getSavedFirebaseConfig,
   saveFirebaseConfig,
   subscribeToRealtimeCloudUpdates,
@@ -64,16 +67,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   populateScoreWeekDropdown();
 
+  // Multi-Browser / Multi-Tab Realtime Broadcast Sync
+  initBroadcastSync((eventData) => {
+    if (eventData.type === 'LEAGUE_UPDATE' && eventData.payload) {
+      mergeLeaguesFromSync(eventData.payload);
+      state.league = loadLeagueData();
+      renderAll();
+    } else if (eventData.type === 'ACCOUNTS_UPDATE' && eventData.payload) {
+      mergeAccountsFromSync(eventData.payload);
+      renderAll();
+    }
+  });
+
   // Initialize Cloud Database if configured
   const cloudRes = await initCloudDatabase();
   if (cloudRes.success) {
     showToast('⚡ Connected to Firebase Realtime Database!');
-    subscribeToRealtimeCloudUpdates((updatedLeagues) => {
-      if (updatedLeagues && updatedLeagues[state.league.id]) {
-        state.league = updatedLeagues[state.league.id];
-        renderAll();
+    subscribeToRealtimeCloudUpdates(
+      (updatedLeagues) => {
+        if (updatedLeagues) {
+          mergeLeaguesFromSync(updatedLeagues);
+          state.league = loadLeagueData();
+          renderAll();
+        }
+      },
+      (updatedAccounts) => {
+        if (updatedAccounts) {
+          mergeAccountsFromSync(updatedAccounts);
+          renderAll();
+        }
       }
-    });
+    );
   }
 
   renderAll();

@@ -47,6 +47,19 @@ export function saveAllLeagues(leaguesMap) {
   }
 }
 
+export function mergeLeaguesFromSync(incomingData) {
+  if (!incomingData) return;
+  const currentMap = getAllLeagues();
+
+  if (incomingData.id) {
+    currentMap[incomingData.id] = incomingData;
+  } else if (typeof incomingData === 'object') {
+    Object.assign(currentMap, incomingData);
+  }
+
+  saveAllLeagues(currentMap);
+}
+
 export function getActiveLeagueId() {
   try {
     const activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_LEAGUE_ID);
