@@ -95,7 +95,6 @@ export async function initCloudDatabase() {
 export async function syncLeagueToCloud(leagueData) {
   if (!leagueData || !leagueData.id) return;
 
-  // Broadcast to other local browser windows/tabs immediately
   broadcastDataUpdate('LEAGUE_UPDATE', leagueData);
 
   if (firebaseDb) {
@@ -104,7 +103,7 @@ export async function syncLeagueToCloud(leagueData) {
       await set(ref(firebaseDb, `leagues/${leagueData.id}`), leagueData);
       return { success: true };
     } catch (err) {
-      console.error('Error syncing league to Firebase:', err);
+      console.warn('⚠️ Firebase Write Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
     }
   }
 }
@@ -112,7 +111,6 @@ export async function syncLeagueToCloud(leagueData) {
 export async function syncAccountsToCloud(accounts) {
   if (!accounts) return;
 
-  // Broadcast to other local browser windows/tabs immediately
   broadcastDataUpdate('ACCOUNTS_UPDATE', accounts);
 
   if (firebaseDb) {
@@ -121,7 +119,7 @@ export async function syncAccountsToCloud(accounts) {
       await set(ref(firebaseDb, 'accounts'), accounts);
       return { success: true };
     } catch (err) {
-      console.error('Error syncing accounts to Firebase:', err);
+      console.warn('⚠️ Firebase Write Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
     }
   }
 }
@@ -135,12 +133,16 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
         if (snapshot.exists() && typeof onLeaguesUpdate === 'function') {
           onLeaguesUpdate(snapshot.val());
         }
+      }, (err) => {
+        console.warn('⚠️ Firebase Subscribe Blocked:', err.message);
       });
 
       onValue(ref(firebaseDb, 'accounts'), (snapshot) => {
         if (snapshot.exists() && typeof onAccountsUpdate === 'function') {
           onAccountsUpdate(snapshot.val());
         }
+      }, (err) => {
+        console.warn('⚠️ Firebase Subscribe Blocked:', err.message);
       });
     } catch (err) {
       console.error('Error subscribing to Firebase:', err);
@@ -159,7 +161,7 @@ export async function fetchAccountsFromCloud() {
       const snapshot = await get(ref(firebaseDb, 'accounts'));
       if (snapshot.exists()) return snapshot.val();
     } catch (err) {
-      console.error('Error fetching accounts from Firebase:', err);
+      console.warn('⚠️ Firebase Fetch Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
     }
   }
   return null;
@@ -172,7 +174,7 @@ export async function fetchLeaguesFromCloud() {
       const snapshot = await get(ref(firebaseDb, 'leagues'));
       if (snapshot.exists()) return snapshot.val();
     } catch (err) {
-      console.error('Error fetching leagues from Firebase:', err);
+      console.warn('⚠️ Firebase Fetch Blocked. Check rules in Firebase Console (.read: true, .write: true):', err);
     }
   }
   return null;
