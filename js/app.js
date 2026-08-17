@@ -1176,13 +1176,18 @@ function setupEventListeners() {
     const u = uInput ? uInput.value : '';
     const p = pInput ? pInput.value : '';
     
-    // Always fetch latest cloud accounts prior to verifying credentials
-    const cloudAccounts = await fetchAccountsFromCloud();
-    if (cloudAccounts && Array.isArray(cloudAccounts)) {
-      mergeAccountsFromSync(cloudAccounts);
-    }
-
+    // 1. Try local login first (0ms instant response)
     let res = await loginUser(u, p);
+
+    // 2. If account not found locally, fetch latest accounts from Cloud DB and retry
+    if (!res.success && res.error === 'User account not found.') {
+      showToast('Checking Cloud Database for account...');
+      const cloudAccounts = await fetchAccountsFromCloud();
+      if (cloudAccounts && Array.isArray(cloudAccounts)) {
+        mergeAccountsFromSync(cloudAccounts);
+        res = await loginUser(u, p);
+      }
+    }
 
     if (res.success) {
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
@@ -1207,13 +1212,16 @@ function setupEventListeners() {
 
     const res = await registerUser(name, u, p, avatar);
     if (res.success) {
-      await syncAccountsToCloud(getAccounts());
+      // 0ms Instant UI update and modal dismissal
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       if (nameInput) nameInput.value = '';
       if (uInput) uInput.value = '';
       if (pInput) pInput.value = '';
       renderAll();
       showToast(`Account created! Welcome, ${res.user.name}!`);
+
+      // Non-blocking background push to Cloud DB
+      syncAccountsToCloud(getAccounts());
     } else {
       showToast(res.error, 'error');
     }
