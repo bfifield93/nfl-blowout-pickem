@@ -18,9 +18,9 @@ const DEFAULT_LEAGUE_DATA = {
   currentWeek: 1,
   activePlayerId: 'p_admin',
   players: [
-    { id: 'p_admin', name: 'Commissioner Admin', avatar: '👑', picks: {} },
-    { id: 'p1', name: 'Player 1', avatar: '⚡', picks: {} },
-    { id: 'p2', name: 'Player 2', avatar: '🔥', picks: {} }
+    { id: 'p_admin', userId: 'p_admin', name: 'Commissioner Admin', avatar: '👑', picks: {} },
+    { id: 'p1', userId: 'p1', name: 'Player 1', avatar: '⚡', picks: {} },
+    { id: 'p2', userId: 'p2', name: 'Player 2', avatar: '🔥', picks: {} }
   ],
   schedule: DEFAULT_SCHEDULE
 };
@@ -89,8 +89,8 @@ export function setActiveLeagueId(leagueId) {
   localStorage.setItem(STORAGE_KEY_ACTIVE_LEAGUE_ID, leagueId);
 }
 
-export function loadLeagueData(userId = null, isAdminUser = false) {
-  const userLeagues = getUserLeagues(userId, isAdminUser);
+export function loadLeagueData(userOrId = null, isAdminUser = false) {
+  const userLeagues = getUserLeagues(userOrId, isAdminUser);
   if (userLeagues.length === 0) {
     return DEFAULT_LEAGUE_DATA;
   }
@@ -141,7 +141,7 @@ export async function createNewLeague(name, joinCode, creatorUser) {
     return { success: false, error: 'Join code must be at least 3 characters long.' };
   }
 
-  // Pre-sync check from Firebase Database to make sure joinCode is not taken on cloud
+  // Pre-sync check from Firebase Database
   try {
     const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
     if (cloudRes.ok) {
@@ -153,25 +153,30 @@ export async function createNewLeague(name, joinCode, creatorUser) {
   }
 
   const leaguesMap = getAllLeagues();
-  if (Object.values(leaguesMap).some(l => l.joinCode === cleanCode)) {
-    return { success: false, error: 'Join code already in use by another league.' };
+  if (Object.values(leaguesMap).some(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode)) {
+    return { success: false, error: 'Join code already in use. Please choose a different join code.' };
   }
 
   const newLeagueId = `lg_${Date.now()}`;
-  const creatorPlayer = creatorUser ? {
-    id: creatorUser.userId || creatorUser.id,
-    name: creatorUser.name,
-    avatar: creatorUser.avatar || '👑',
+  const creatorId = creatorUser ? (creatorUser.userId || creatorUser.id) : 'p_admin';
+  const creatorName = creatorUser ? creatorUser.name : 'Commissioner';
+  const creatorAvatar = creatorUser ? (creatorUser.avatar || '👑') : '👑';
+
+  const creatorPlayer = {
+    id: creatorId,
+    userId: creatorId,
+    name: creatorName,
+    avatar: creatorAvatar,
     picks: {}
-  } : { id: 'p_creator', name: 'Commissioner', avatar: '👑', picks: {} };
+  };
 
   const newLeague = {
     id: newLeagueId,
     leagueName: cleanName,
     joinCode: cleanCode,
-    adminUserId: creatorUser ? (creatorUser.userId || creatorUser.id) : creatorPlayer.id,
+    adminUserId: creatorId,
     currentWeek: 1,
-    activePlayerId: creatorPlayer.id,
+    activePlayerId: creatorId,
     players: [creatorPlayer],
     schedule: DEFAULT_SCHEDULE,
     createdAt: Date.now()
@@ -202,7 +207,6 @@ export async function joinLeagueByCode(joinCode, user) {
     return { success: false, error: 'Please enter a valid Join Code.' };
   }
 
-  // Pre-sync check from Firebase Database to fetch latest cloud leagues before checking code
   try {
     const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
     if (cloudRes.ok) {
@@ -214,18 +218,19 @@ export async function joinLeagueByCode(joinCode, user) {
   }
 
   const leaguesMap = getAllLeagues();
-  const league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
+  const league = Object.values(leaguesMap).find(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode);
 
   if (!league) {
     return { success: false, error: 'League not found with that Join Code. Please verify code.' };
   }
 
   const userId = user ? (user.userId || user.id) : 'p_user';
-  let player = league.players.find(p => p.id === userId);
+  let player = league.players.find(p => (p.id === userId || p.userId === userId));
 
   if (!player) {
     player = {
       id: userId,
+      userId: userId,
       name: user ? user.name : 'Player',
       avatar: user ? (user.avatar || '🏈') : '🏈',
       picks: {}
@@ -238,7 +243,6 @@ export async function joinLeagueByCode(joinCode, user) {
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(league.id);
 
-  // Direct REST PUT to Firebase Realtime Database
   try {
     await fetch(`${FIREBASE_REST_BASE_URL}/${league.id}.json`, {
       method: 'PUT',
@@ -252,11 +256,13 @@ export async function joinLeagueByCode(joinCode, user) {
   return { success: true, league };
 }
 
-export function getUserLeagues(userId, isAdminUser = false) {
+export function getUserLeagues(userOrId, isAdminUser = false) {
   const leaguesMap = getAllLeagues();
   const allLeagues = Object.values(leaguesMap);
 
-  if (!userId) {
+  const uid = typeof userOrId === 'object' ? (userOrId?.userId || userOrId?.id) : userOrId;
+
+  if (!uid) {
     return [];
   }
 
@@ -266,15 +272,16 @@ export function getUserLeagues(userId, isAdminUser = false) {
 
   return allLeagues.filter(l => {
     if (!l) return false;
-    const isCreator = (l.adminUserId && (l.adminUserId === userId));
-    const isMember = (l.players && Array.isArray(l.players) && l.players.some(p => (p.id === userId || p.userId === userId)));
+    const isCreator = (l.adminUserId && l.adminUserId === uid);
+    const isMember = (l.players && Array.isArray(l.players) && l.players.some(p => (p.id === uid || p.userId === uid)));
     return isCreator || isMember;
   });
 }
 
-export function isLeagueAdmin(league, userId) {
-  if (!league || !userId) return false;
-  return league.adminUserId === userId;
+export function isLeagueAdmin(league, userOrId) {
+  if (!league || !userOrId) return false;
+  const uid = typeof userOrId === 'object' ? (userOrId.userId || userOrId.id) : userOrId;
+  return league.adminUserId === uid;
 }
 
 export function exportLeagueJson(leagueData) {
