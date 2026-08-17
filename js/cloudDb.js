@@ -1,16 +1,12 @@
 /**
  * cloudDb.js
- * Zero-Config Automated Cloud Database & Multi-Browser Real-Time Sync Adapter.
- * Integrates BroadcastChannel for instant local multi-browser sync and an automatic
- * central Cloud REST Database for seamless cross-computer sync without user manual setup.
+ * Multi-Browser & Multi-Computer Real-Time Data Sync Adapter.
+ * Integrates BroadcastChannel for instant local multi-browser sync (Chrome, Edge, Incognito)
+ * and Firebase Realtime Database for cross-computer remote sync.
  */
 
 const STORAGE_KEY_FIREBASE_CONFIG = 'nfl_pickem_firebase_config_v1';
 const BROADCAST_CHANNEL_NAME = 'nfl_blowout_pickem_broadcast_v1';
-
-// Central Zero-Config Public Cloud Database REST URL
-const DEFAULT_CLOUD_DB_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'; // Active public endpoint helper
-const FALLBACK_PUBLIC_KV_URL = 'https://nfl-blowout-pickem-2026.free.beeceptor.com/data';
 
 let firebaseApp = null;
 let firebaseDb = null;
@@ -74,7 +70,7 @@ export async function initCloudDatabase() {
       firebaseApp = initializeApp(config);
       firebaseDb = getDatabase(firebaseApp);
       isCloudConnected = true;
-      console.log('⚡ Connected to custom Firebase Realtime Database!');
+      console.log('⚡ Connected to custom Firebase Database!');
       return { success: true, mode: 'CUSTOM_FIREBASE' };
     } catch (err) {
       console.warn('Firebase custom init error:', err);
@@ -82,7 +78,7 @@ export async function initCloudDatabase() {
   }
 
   isCloudConnected = true;
-  return { success: true, mode: 'AUTO_CLOUD' };
+  return { success: true, mode: 'BROADCAST_ONLY' };
 }
 
 export async function syncLeagueToCloud(leagueData) {
@@ -101,17 +97,6 @@ export async function syncLeagueToCloud(leagueData) {
     } catch (err) {
       console.error('Error syncing league to custom Firebase:', err);
     }
-  }
-
-  // Automatic Public Cloud REST Sync (for cross-computer zero-config sync)
-  try {
-    await fetch(`https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/league_${leagueData.id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(leagueData)
-    });
-  } catch (e) {
-    // Non-blocking background sync catch
   }
 }
 
@@ -132,17 +117,6 @@ export async function syncAccountsToCloud(accounts) {
       console.error('Error syncing accounts to custom Firebase:', err);
     }
   }
-
-  // Automatic Public Cloud REST Sync
-  try {
-    await fetch('https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/accounts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(accounts)
-    });
-  } catch (e) {
-    // Non-blocking background sync catch
-  }
 }
 
 export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccountsUpdate) {
@@ -162,26 +136,10 @@ export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccount
           onAccountsUpdate(snapshot.val());
         }
       });
-      return;
     } catch (err) {
       console.error('Error subscribing to custom Firebase:', err);
     }
   }
-
-  // Automatic Background Cloud REST Polling (for zero-config multi-computer sync)
-  if (autoPollInterval) clearInterval(autoPollInterval);
-
-  autoPollInterval = setInterval(async () => {
-    try {
-      const resAccounts = await fetch('https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/accounts');
-      if (resAccounts.ok) {
-        const accountsData = await resAccounts.json();
-        if (accountsData && typeof onAccountsUpdate === 'function') {
-          onAccountsUpdate(accountsData);
-        }
-      }
-    } catch (e) {}
-  }, 4000);
 }
 
 export function isCloudActive() {
@@ -199,12 +157,6 @@ export async function fetchAccountsFromCloud() {
       console.error('Error fetching accounts from Firebase:', err);
     }
   }
-
-  try {
-    const res = await fetch('https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/accounts');
-    if (res.ok) return await res.json();
-  } catch (e) {}
-
   return null;
 }
 
@@ -219,11 +171,5 @@ export async function fetchLeaguesFromCloud() {
       console.error('Error fetching leagues from Firebase:', err);
     }
   }
-
-  try {
-    const res = await fetch('https://kvdb.io/JfgP6uRjX1WCcest4LKEXE/leagues');
-    if (res.ok) return await res.json();
-  } catch (e) {}
-
   return null;
 }

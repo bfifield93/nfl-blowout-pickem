@@ -4,7 +4,6 @@
  */
 
 import { DEFAULT_SCHEDULE } from './nflData.js';
-import { syncLeagueToCloud } from './cloudDb.js';
 
 const STORAGE_KEY_LEAGUES = 'nfl_pickem_leagues_v3';
 const STORAGE_KEY_ACTIVE_LEAGUE_ID = 'nfl_pickem_active_league_id_v3';
@@ -84,7 +83,6 @@ export function loadLeagueData() {
   const leaguesMap = getAllLeagues();
   const activeLeague = leaguesMap[activeId] || DEFAULT_LEAGUE_DATA;
 
-  // Enforce schedule consistency
   if (!activeLeague.schedule || activeLeague.schedule.length === 0) {
     activeLeague.schedule = DEFAULT_SCHEDULE;
   }
@@ -98,7 +96,6 @@ export function saveLeagueData(leagueData) {
   leaguesMap[leagueData.id] = leagueData;
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(leagueData.id);
-  syncLeagueToCloud(leagueData);
 }
 
 export function createNewLeague(name, joinCode, creatorUser) {
@@ -114,7 +111,6 @@ export function createNewLeague(name, joinCode, creatorUser) {
 
   const leaguesMap = getAllLeagues();
 
-  // Check if join code already taken
   if (Object.values(leaguesMap).some(l => l.joinCode === cleanCode)) {
     return { success: false, error: 'Join code already in use by another league.' };
   }
@@ -146,25 +142,14 @@ export function createNewLeague(name, joinCode, creatorUser) {
   return { success: true, league: newLeague };
 }
 
-import { syncLeagueToCloud, fetchLeaguesFromCloud } from './cloudDb.js';
-
-export async function joinLeagueByCode(joinCode, user) {
+export function joinLeagueByCode(joinCode, user) {
   const cleanCode = (joinCode || '').trim().toUpperCase();
   if (!cleanCode) {
     return { success: false, error: 'Please enter a valid Join Code.' };
   }
 
-  let leaguesMap = getAllLeagues();
-  let league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
-
-  if (!league) {
-    const cloudLeagues = await fetchLeaguesFromCloud();
-    if (cloudLeagues) {
-      mergeLeaguesFromSync(cloudLeagues);
-      leaguesMap = getAllLeagues();
-      league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
-    }
-  }
+  const leaguesMap = getAllLeagues();
+  const league = Object.values(leaguesMap).find(l => l.joinCode === cleanCode);
 
   if (!league) {
     return { success: false, error: 'League not found with that Join Code.' };
@@ -193,48 +178,48 @@ export async function joinLeagueByCode(joinCode, user) {
 
 export function getUserLeagues(userId) {
   const leaguesMap = getAllLeagues();
-  if (!userId) return Object.values(leaguesMap);
+  const allLeagues = Object.values(leaguesMap);
+  if (!userId) return allLeagues;
 
-  return Object.values(leaguesMap).filter(l => 
-    l.adminUserId === userId || l.players.some(p => p.id === userId)
-  );
+  return allLeagues.filter(l => {
+    return l.adminUserId === userId || (l.players && l.players.some(p => p.id === userId));
+  });
 }
 
-export function isLeagueAdmin(user, leagueData) {
-  if (!user || !leagueData) return false;
-  if (user.role === 'ADMIN') return true;
-  return leagueData.adminUserId === user.userId;
+export function isLeagueAdmin(league, userId) {
+  if (!league || !userId) return false;
+  return league.adminUserId === userId;
 }
 
-export function exportLeagueJson(data) {
-  const jsonStr = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${(data.leagueName || 'league').toLowerCase().replace(/[^a-z0-9]/g, '_')}_data.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+export function exportLeagueJson(leagueData) {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leagueData, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `${leagueData.leagueName.toLowerCase().replace(/\s+/g, '_')}_data.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
 }
 
-export function importLeagueJson(jsonText) {
+export function importLeagueJson(jsonString) {
   try {
-    const parsed = JSON.parse(jsonText);
-    if (!parsed.players || !Array.isArray(parsed.players)) {
-      throw new Error('Invalid league file format: missing players list.');
+    const imported = JSON.parse(jsonString);
+    if (!imported.id || !imported.leagueName || !imported.players || !imported.schedule) {
+      return { success: false, error: 'Invalid league data JSON structure.' };
     }
-    if (!parsed.id) parsed.id = `lg_${Date.now()}`;
-    saveLeagueData(parsed);
-    return { success: true, data: parsed };
+    const leaguesMap = getAllLeagues();
+    leaguesMap[imported.id] = imported;
+    saveAllLeagues(leaguesMap);
+    setActiveLeagueId(imported.id);
+    return { success: true, data: imported };
   } catch (err) {
-    return { success: false, error: err.message };
+    return { success: false, error: 'Failed to parse JSON file.' };
   }
 }
 
 export function resetToDefaultLeague() {
-  const freshData = JSON.parse(JSON.stringify(DEFAULT_LEAGUE_DATA));
-  saveLeagueData(freshData);
-  return freshData;
+  const leaguesMap = { [DEFAULT_LEAGUE_DATA.id]: DEFAULT_LEAGUE_DATA };
+  saveAllLeagues(leaguesMap);
+  setActiveLeagueId(DEFAULT_LEAGUE_DATA.id);
+  return DEFAULT_LEAGUE_DATA;
 }

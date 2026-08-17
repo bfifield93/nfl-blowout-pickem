@@ -56,12 +56,9 @@ export function getAccounts() {
   }
 }
 
-import { syncAccountsToCloud } from './cloudDb.js';
-
 export function saveAccounts(accounts) {
   try {
     localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(accounts));
-    syncAccountsToCloud(accounts);
   } catch (err) {
     console.error('Error saving accounts:', err);
   }
@@ -107,17 +104,8 @@ export function setCurrentSession(sessionData) {
 
 export async function loginUser(username, password) {
   const cleanUsername = username.trim().toLowerCase();
-  let accounts = getAccounts();
-  let account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
-
-  if (!account) {
-    const cloudAccounts = await fetchAccountsFromCloud();
-    if (cloudAccounts && Array.isArray(cloudAccounts)) {
-      mergeAccountsFromSync(cloudAccounts);
-      accounts = getAccounts();
-      account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
-    }
-  }
+  const accounts = getAccounts();
+  const account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
 
   if (!account) {
     return { success: false, error: 'User account not found.' };
@@ -168,7 +156,6 @@ export async function registerUser(name, username, password, avatar = '🏈', ro
   accounts.push(newAccount);
   saveAccounts(accounts);
 
-  // Auto sign-in
   const session = {
     userId: newAccount.id,
     username: newAccount.username,
@@ -194,59 +181,52 @@ export function getCurrentUser() {
 }
 
 export function isAdmin() {
-  const currentUser = getCurrentUser();
-  return currentUser?.role === 'ADMIN';
+  const user = getCurrentUser();
+  return user && user.role === 'ADMIN';
 }
 
-export async function adminUpdateUser(userId, { name, username, password, avatar, role }) {
-  const accounts = getAccounts();
-  const account = accounts.find(a => a.id === userId);
-  if (!account) return { success: false, error: 'Account not found.' };
-
-  if (name) account.name = name.trim();
-  if (avatar) account.avatar = avatar;
-  if (role) account.role = role;
-
-  if (username && username.trim().toLowerCase() !== account.username) {
-    const newUsername = username.trim().toLowerCase();
-    if (accounts.some(a => a.id !== userId && a.username === newUsername)) {
-      return { success: false, error: 'Username already in use.' };
-    }
-    account.username = newUsername;
+export async function adminUpdateUser(userId, updates) {
+  if (!isAdmin()) {
+    return { success: false, error: 'Admin privileges required.' };
   }
 
-  if (password && password.length >= 4) {
-    account.passwordHash = await hashPassword(password);
+  const accounts = getAccounts();
+  const account = accounts.find(a => a.id === userId);
+  if (!account) {
+    return { success: false, error: 'User account not found.' };
+  }
+
+  if (updates.password) {
+    account.passwordHash = await hashPassword(updates.password);
+  }
+  if (updates.role) {
+    account.role = updates.role;
+  }
+  if (updates.name) {
+    account.name = updates.name.trim();
   }
 
   saveAccounts(accounts);
-
-  // Update current session if editing active user
-  const session = getCurrentSession();
-  if (session && session.userId === userId) {
-    session.name = account.name;
-    session.username = account.username;
-    session.avatar = account.avatar;
-    session.role = account.role;
-    setCurrentSession(session);
-  }
-
   return { success: true, account };
 }
 
 export function adminDeleteUser(userId) {
+  if (!isAdmin()) {
+    return { success: false, error: 'Admin privileges required.' };
+  }
+
   let accounts = getAccounts();
   const target = accounts.find(a => a.id === userId);
-
-  if (!target) return { success: false, error: 'Account not found.' };
-  if (target.role === 'ADMIN' && accounts.filter(a => a.role === 'ADMIN').length <= 1) {
-    return { success: false, error: 'Cannot delete the only Admin account!' };
+  if (target && target.role === 'ADMIN') {
+    const adminCount = accounts.filter(a => a.role === 'ADMIN').length;
+    if (adminCount <= 1) {
+      return { success: false, error: 'Cannot delete the only Commissioner Admin.' };
+    }
   }
 
   accounts = accounts.filter(a => a.id !== userId);
   saveAccounts(accounts);
 
-  // If deleted user was signed in, sign out
   const session = getCurrentSession();
   if (session && session.userId === userId) {
     logoutUser();
