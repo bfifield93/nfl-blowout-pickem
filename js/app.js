@@ -960,18 +960,24 @@ function setupEventListeners() {
     if (elements.formCreateLeague) elements.formCreateLeague.style.display = 'none';
     if (elements.formJoinLeague) elements.formJoinLeague.style.display = 'block';
     if (elements.containerMyLeagues) elements.containerMyLeagues.style.display = 'none';
+    if (elements.containerAdminMaster) elements.containerAdminMaster.style.display = 'none';
     elements.tabLeagueJoin?.classList.add('active');
     elements.tabLeagueCreate?.classList.remove('active');
     elements.tabLeagueMy?.classList.remove('active');
+    elements.tabLeagueAdmin?.classList.remove('active');
+    const codeInput = document.getElementById('joinLeagueCode');
+    if (codeInput) codeInput.focus();
   });
 
   elements.tabLeagueMy?.addEventListener('click', () => {
     if (elements.formCreateLeague) elements.formCreateLeague.style.display = 'none';
     if (elements.formJoinLeague) elements.formJoinLeague.style.display = 'none';
     if (elements.containerMyLeagues) elements.containerMyLeagues.style.display = 'block';
+    if (elements.containerAdminMaster) elements.containerAdminMaster.style.display = 'none';
     elements.tabLeagueMy?.classList.add('active');
     elements.tabLeagueCreate?.classList.remove('active');
     elements.tabLeagueJoin?.classList.remove('active');
+    elements.tabLeagueAdmin?.classList.remove('active');
     renderMyLeaguesList();
   });
 
@@ -1022,6 +1028,7 @@ function setupEventListeners() {
       if (codeInput) codeInput.value = '';
       renderAll();
       showToast(`🏆 Created & launched "${res.league.leagueName}"! Join Code: ${res.league.joinCode}`);
+      alert(`🏆 Created & launched "${res.league.leagueName}"!`);
     } else {
       if (errEl) {
         errEl.textContent = res.error;
@@ -1036,14 +1043,6 @@ function setupEventListeners() {
     const errEl = document.getElementById('joinLeagueError');
     if (errEl) errEl.style.display = 'none';
 
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-      elements.modalAuth?.classList.add('active');
-      alert('🔐 Please sign in or register an account to join leagues!');
-      return;
-    }
-
     const codeInput = document.getElementById('joinLeagueCode');
     const code = codeInput ? codeInput.value : '';
 
@@ -1053,6 +1052,14 @@ function setupEventListeners() {
         errEl.style.display = 'block';
       }
       alert('Please enter an Invite Join Code.');
+      return;
+    }
+
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      elements.modalAuth?.classList.add('active');
+      alert('🔐 Please sign in or register an account to join leagues!');
       return;
     }
 
@@ -1066,6 +1073,7 @@ function setupEventListeners() {
       if (codeInput) codeInput.value = '';
       renderAll();
       showToast(`🏆 Joined "${res.league.leagueName}"!`);
+      alert(`🏆 Successfully joined "${res.league.leagueName}"!`);
     } else {
       if (errEl) {
         errEl.textContent = res.error;
@@ -1080,6 +1088,22 @@ function setupEventListeners() {
 
   document.getElementById('btnSubmitCreateLeague')?.addEventListener('click', handleCreateLeagueSubmit);
   document.getElementById('btnSubmitJoinLeague')?.addEventListener('click', handleJoinLeagueSubmit);
+
+  document.addEventListener('click', (e) => {
+    const joinBtn = e.target.closest('#btnSubmitJoinLeague');
+    if (joinBtn) {
+      e.preventDefault();
+      handleJoinLeagueSubmit(e);
+      return;
+    }
+
+    const createBtn = e.target.closest('#btnSubmitCreateLeague');
+    if (createBtn) {
+      e.preventDefault();
+      handleCreateLeagueSubmit(e);
+      return;
+    }
+  });
 
   // Delete League Handler (Master / Admin)
   document.addEventListener('click', async (e) => {
