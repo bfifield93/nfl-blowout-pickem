@@ -1056,37 +1056,76 @@ function setupEventListeners() {
     }
   });
 
-  // Auth Event Handlers
-  elements.btnSignIn?.addEventListener('click', () => {
-    if (elements.formLogin) elements.formLogin.style.display = 'block';
-    if (elements.formRegister) elements.formRegister.style.display = 'none';
-    elements.tabAuthLogin?.classList.add('active');
-    elements.tabAuthRegister?.classList.remove('active');
-    elements.modalAuth?.classList.add('active');
-  });
+  // Global Event Delegation for 100% reliable button click handling
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    
+    // Sign In Button Click
+    const signInBtn = target.closest('#btnSignIn, #btnLandingSignIn');
+    if (signInBtn) {
+      e.preventDefault();
+      if (elements.formLogin) elements.formLogin.style.display = 'block';
+      if (elements.formRegister) elements.formRegister.style.display = 'none';
+      elements.tabAuthLogin?.classList.add('active');
+      elements.tabAuthRegister?.classList.remove('active');
+      elements.modalAuth?.classList.add('active');
+      return;
+    }
 
-  elements.btnLandingSignIn?.addEventListener('click', () => {
-    if (elements.formLogin) elements.formLogin.style.display = 'block';
-    if (elements.formRegister) elements.formRegister.style.display = 'none';
-    elements.tabAuthLogin?.classList.add('active');
-    elements.tabAuthRegister?.classList.remove('active');
-    elements.modalAuth?.classList.add('active');
-  });
+    // Register Button Click
+    const regBtn = target.closest('#btnRegister, #btnLandingRegister');
+    if (regBtn) {
+      e.preventDefault();
+      if (elements.formLogin) elements.formLogin.style.display = 'none';
+      if (elements.formRegister) elements.formRegister.style.display = 'block';
+      elements.tabAuthRegister?.classList.add('active');
+      elements.tabAuthLogin?.classList.remove('active');
+      elements.modalAuth?.classList.add('active');
+      return;
+    }
 
-  elements.btnRegister?.addEventListener('click', () => {
-    if (elements.formLogin) elements.formLogin.style.display = 'none';
-    if (elements.formRegister) elements.formRegister.style.display = 'block';
-    elements.tabAuthRegister?.classList.add('active');
-    elements.tabAuthLogin?.classList.remove('active');
-    elements.modalAuth?.classList.add('active');
-  });
+    // Rules Button Click
+    const rulesBtn = target.closest('#btnRules');
+    if (rulesBtn) {
+      e.preventDefault();
+      elements.modalRules?.classList.add('active');
+      return;
+    }
 
-  elements.btnLandingRegister?.addEventListener('click', () => {
-    if (elements.formLogin) elements.formLogin.style.display = 'none';
-    if (elements.formRegister) elements.formRegister.style.display = 'block';
-    elements.tabAuthRegister?.classList.add('active');
-    elements.tabAuthLogin?.classList.remove('active');
-    elements.modalAuth?.classList.add('active');
+    // Export / Import Sync Button Click
+    const exportBtn = target.closest('#btnExportImport');
+    if (exportBtn) {
+      e.preventDefault();
+      const config = getSavedFirebaseConfig();
+      if (config) {
+        if (document.getElementById('fbApiKey')) document.getElementById('fbApiKey').value = config.apiKey || '';
+        if (document.getElementById('fbDatabaseUrl')) document.getElementById('fbDatabaseUrl').value = config.databaseURL || '';
+        if (document.getElementById('fbProjectId')) document.getElementById('fbProjectId').value = config.projectId || '';
+      }
+      elements.modalExportImport?.classList.add('active');
+      return;
+    }
+
+    // League Hub Button Click
+    const leagueHubBtn = target.closest('#btnOpenLeagueHub');
+    if (leagueHubBtn) {
+      e.preventDefault();
+      elements.modalLeagueHub?.classList.add('active');
+      return;
+    }
+
+    // Close Modal Button Click
+    const closeBtn = target.closest('.close-modal');
+    if (closeBtn) {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      return;
+    }
+
+    // Modal Backdrop Click
+    if (target.classList.contains('modal-overlay')) {
+      target.classList.remove('active');
+      return;
+    }
   });
 
   elements.btnLandingLiveSync?.addEventListener('click', async () => {
