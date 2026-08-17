@@ -5,6 +5,7 @@
 
 const STORAGE_KEY_ACCOUNTS = 'nfl_pickem_accounts_v2';
 const STORAGE_KEY_SESSION = 'nfl_pickem_session_v2';
+const FIREBASE_REST_ACCOUNTS_URL = 'https://nfl-blowout-pickem-default-rtdb.firebaseio.com/accounts.json';
 
 // Helper: Hash password string using SHA-256 (with fallback for HTTP non-secure contexts)
 async function hashPassword(password) {
@@ -127,6 +128,21 @@ export function setCurrentSession(sessionData) {
 
 export async function loginUser(username, password) {
   const cleanUsername = username.trim().toLowerCase();
+
+  // Direct REST check from Firebase Realtime Database
+  try {
+    const cloudRes = await fetch(FIREBASE_REST_ACCOUNTS_URL);
+    if (cloudRes.ok) {
+      const cloudAccounts = await cloudRes.json();
+      if (cloudAccounts) {
+        const arr = Array.isArray(cloudAccounts) ? cloudAccounts : Object.values(cloudAccounts);
+        mergeAccountsFromSync(arr);
+      }
+    }
+  } catch (err) {
+    console.warn('Direct REST cloud fetch notice:', err);
+  }
+
   const accounts = getAccounts();
   const account = accounts.find(a => a.username.toLowerCase() === cleanUsername);
 
@@ -161,6 +177,20 @@ export async function registerUser(name, username, password, avatar = '🏈', ro
     return { success: false, error: 'Password must be at least 4 characters.' };
   }
 
+  // Pre-sync check to ensure fresh account list from cloud before checking username availability
+  try {
+    const cloudRes = await fetch(FIREBASE_REST_ACCOUNTS_URL);
+    if (cloudRes.ok) {
+      const cloudAccounts = await cloudRes.json();
+      if (cloudAccounts) {
+        const arr = Array.isArray(cloudAccounts) ? cloudAccounts : Object.values(cloudAccounts);
+        mergeAccountsFromSync(arr);
+      }
+    }
+  } catch (err) {
+    console.warn('Pre-registration cloud fetch notice:', err);
+  }
+
   const accounts = getAccounts();
   if (accounts.some(a => a.username.toLowerCase() === cleanUsername)) {
     return { success: false, error: 'Username is already taken.' };
@@ -178,6 +208,18 @@ export async function registerUser(name, username, password, avatar = '🏈', ro
 
   accounts.push(newAccount);
   saveAccounts(accounts);
+
+  // Direct REST PUT to Firebase Realtime Database to guarantee immediate write
+  try {
+    const putRes = await fetch(FIREBASE_REST_ACCOUNTS_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(accounts)
+    });
+    console.log('⚡ Direct REST register sync status:', putRes.status);
+  } catch (err) {
+    console.error('Direct REST register sync error:', err);
+  }
 
   const session = {
     userId: newAccount.id,
