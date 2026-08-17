@@ -90,21 +90,24 @@ export function setActiveLeagueId(leagueId) {
 }
 
 export function loadLeagueData(userOrId = null) {
-  const userLeagues = getUserLeagues(userOrId);
-  if (userLeagues.length === 0) {
-    return DEFAULT_LEAGUE_DATA;
-  }
-
+  const leaguesMap = getAllLeagues();
   const activeId = getActiveLeagueId();
-  const matchingActive = userLeagues.find(l => l.id === activeId);
 
-  if (matchingActive) {
-    return matchingActive;
+  if (activeId && leaguesMap[activeId]) {
+    return leaguesMap[activeId];
   }
 
-  const firstUserLeague = userLeagues[0];
-  setActiveLeagueId(firstUserLeague.id);
-  return firstUserLeague;
+  if (userOrId) {
+    const userLeagues = getUserLeagues(userOrId);
+    if (userLeagues.length > 0) {
+      setActiveLeagueId(userLeagues[0].id);
+      return userLeagues[0];
+    }
+  }
+
+  const firstLeague = Object.values(leaguesMap)[0] || DEFAULT_LEAGUE_DATA;
+  setActiveLeagueId(firstLeague.id);
+  return firstLeague;
 }
 
 export async function saveLeagueData(leagueData) {

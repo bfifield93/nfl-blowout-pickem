@@ -810,10 +810,28 @@ function setupEventListeners() {
   // League Hub Event Handlers
   elements.leagueDropdown?.addEventListener('change', (e) => {
     const selectedLeagueId = e.target.value;
-    setActiveLeagueId(selectedLeagueId);
-    state.league = loadLeagueData();
-    renderAll();
-    showToast(`Switched to league: ${state.league.leagueName}`);
+    const leaguesMap = getAllLeagues();
+    if (leaguesMap[selectedLeagueId]) {
+      setActiveLeagueId(selectedLeagueId);
+      state.league = leaguesMap[selectedLeagueId];
+      renderAll();
+      showToast(`Switched to league: ${state.league.leagueName}`);
+    }
+  });
+
+  elements.myLeaguesList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-switch-league');
+    if (btn) {
+      const leagueId = btn.dataset.leagueId;
+      const leaguesMap = getAllLeagues();
+      if (leaguesMap[leagueId]) {
+        setActiveLeagueId(leagueId);
+        state.league = leaguesMap[leagueId];
+        renderAll();
+        elements.modalLeagueHub?.classList.remove('active');
+        showToast(`Switched to league: ${state.league.leagueName}`);
+      }
+    }
   });
 
   elements.btnOpenLeagueHub?.addEventListener('click', () => {
