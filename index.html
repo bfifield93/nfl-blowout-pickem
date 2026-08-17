@@ -78,13 +78,78 @@
   <!-- Main Body Container -->
   <main class="main-container">
     
-    <!-- Navigation Tabs -->
-    <nav class="tabs-nav">
-      <button class="tab-btn active" data-tab="tabPicks">🏈 Weekly Picks</button>
-      <button class="tab-btn" data-tab="tabStandings">🏆 Leaderboard & Standings</button>
-      <button class="tab-btn" data-tab="tabMatrix">📊 Used Teams Matrix</button>
-      <button class="tab-btn" data-tab="tabScores">⚙️ Score Manager / Sim</button>
-    </nav>
+    <!-- Landing / Public Homepage View (Real-time scores, Sign In/Register, Rules) -->
+    <div id="landingView">
+      <!-- Hero Banner -->
+      <section style="background: linear-gradient(135deg, rgba(17,24,39,0.9), rgba(15,23,42,0.9)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; margin-bottom: 32px; backdrop-filter: blur(12px);">
+        <div style="font-size: 3rem; margin-bottom: 12px; animation: pulse 2s infinite;">🏈</div>
+        <h2 style="font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #FFF, var(--color-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;">
+          NFL BLOWOUT OF THE WEEK PICK'EM
+        </h2>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 24px auto; font-size: 1rem; line-height: 1.6;">
+          Pick <strong>1 blowout team each week</strong> to win or lose. Earn points equal to the <strong>Margin of Victory</strong>! But watch out: incorrect picks deduct points from your total, and each team can only be used <strong>once per season</strong>!
+        </p>
+
+        <div id="landingAuthCtas" style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+          <button id="btnLandingSignIn" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem;">
+            🔐 Sign In to Play
+          </button>
+          <button id="btnLandingRegister" class="btn btn-secondary" style="padding: 12px 24px; font-size: 1rem;">
+            📝 Register Account
+          </button>
+        </div>
+      </section>
+
+      <!-- Real-Time NFL Scores Section -->
+      <section style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 id="landingScoresTitle" style="font-size: 1.4rem; font-weight: 800; color: #FFF;">⚡ Real-Time NFL Scores (Week 1)</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Live kickoff times, game clocks, and official ESPN scores</span>
+          </div>
+          <button id="btnLandingLiveSync" class="btn btn-primary" style="background: linear-gradient(135deg, #06B6D4, #3B82F6);">
+            🌐 Sync Live ESPN Scores
+          </button>
+        </div>
+
+        <div id="landingScoresGrid" class="matchups-grid"></div>
+      </section>
+
+      <!-- League Rules Section -->
+      <section style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; color: var(--text-main);">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--color-gold); margin-bottom: 16px;">📖 League Rules & How to Play</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-size: 1.5rem; margin-bottom: 6px;">🎯</div>
+            <h4 style="color: var(--color-cyan); font-weight: 800; margin-bottom: 4px;">1. Single Weekly Pick</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Select <strong>ONLY 1 team per week</strong> as your predicted Blowout Winner or Blowout Loser.</p>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-size: 1.5rem; margin-bottom: 6px;">📈</div>
+            <h4 style="color: var(--color-green); font-weight: 800; margin-bottom: 4px;">2. Margin Points & Penalties</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Correct picks earn <strong>+Margin Points</strong>. Incorrect picks deduct <strong>-Margin Penalties</strong> from your season total!</p>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-size: 1.5rem; margin-bottom: 6px;">🔒</div>
+            <h4 style="color: var(--color-gold); font-weight: 800; margin-bottom: 4px;">3. Survivor Team Lock</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">Each NFL team can only be selected <strong>ONCE per season</strong> (win or lose). Once picked, they are locked for the year!</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Interactive Pick'em App Workspace (Unlocked when signed in) -->
+    <div id="appWorkspace" style="display: none;">
+      <!-- Navigation Tabs -->
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="tabPicks">🏈 Weekly Picks</button>
+        <button class="tab-btn" data-tab="tabStandings">🏆 Leaderboard & Standings</button>
+        <button class="tab-btn" data-tab="tabMatrix">📊 Used Teams Matrix</button>
+        <button class="tab-btn" data-tab="tabScores">⚙️ Score Manager / Sim</button>
+      </nav>
 
     <!-- Tab 1: Weekly Picks & Matchups -->
     <section id="tabPicks" class="tab-content active">
@@ -192,6 +257,7 @@
       </div>
     </section>
 
+    </div> <!-- End appWorkspace -->
   </main>
 
   <!-- Add Player Modal -->

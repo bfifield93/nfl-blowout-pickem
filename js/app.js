@@ -228,17 +228,99 @@ function renderMyLeaguesList() {
   }).join('');
 }
 
+function renderLandingScores() {
+  const weekData = state.league.schedule.find(w => w.week === state.currentWeek);
+  if (!weekData) return;
+
+  if (elements.landingScoresTitle) {
+    elements.landingScoresTitle.textContent = `⚡ Real-Time NFL Scores (Week ${state.currentWeek})`;
+  }
+
+  if (!weekData.games || weekData.games.length === 0) {
+    if (elements.landingScoresGrid) {
+      elements.landingScoresGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 30px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+          <div style="font-size: 2rem; margin-bottom: 8px;">🌐</div>
+          <h3 style="font-size: 1rem; font-weight: 800;">Fetching Real 2026 NFL Schedule...</h3>
+          <p style="color: var(--text-muted); font-size: 0.8rem;">Click Sync Live ESPN Scores above to load games.</p>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  if (elements.landingScoresGrid) {
+    elements.landingScoresGrid.innerHTML = weekData.games.map(game => {
+      const homeTeam = NFL_TEAMS[game.home] || { name: game.home, city: '', primaryColor: '#333', logoSvg: '' };
+      const awayTeam = NFL_TEAMS[game.away] || { name: game.away, city: '', primaryColor: '#333', logoSvg: '' };
+
+      const homeScoreDisplay = game.status === 'FINAL' ? game.homeScore : '-';
+      const awayScoreDisplay = game.status === 'FINAL' ? game.awayScore : '-';
+
+      return `
+        <div class="matchup-card" style="padding: 16px;">
+          <div class="matchup-header">
+            <span>${awayTeam.city} @ ${homeTeam.city}</span>
+            <span class="game-status-badge ${game.status === 'FINAL' ? 'final' : 'scheduled'}">${game.status}</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="team-logo-badge" style="width: 32px; height: 32px; background: ${awayTeam.primaryColor}22;">
+                  ${awayTeam.logoSvg}
+                </div>
+                <div>
+                  <span style="font-weight: 800; font-size: 0.95rem;">${awayTeam.name}</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">${awayTeam.city}</span>
+                </div>
+              </div>
+              <span style="font-size: 1.2rem; font-weight: 900; color: #FFF;">${awayScoreDisplay}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="team-logo-badge" style="width: 32px; height: 32px; background: ${homeTeam.primaryColor}22;">
+                  ${homeTeam.logoSvg}
+                </div>
+                <div>
+                  <span style="font-weight: 800; font-size: 0.95rem;">${homeTeam.name}</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">${homeTeam.city}</span>
+                </div>
+              </div>
+              <span style="font-size: 1.2rem; font-weight: 900; color: #FFF;">${homeScoreDisplay}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
 function renderAll() {
   syncAccountsWithPlayers();
   renderAuthHeader();
-  renderLeagueDropdown();
-  renderPlayerDropdowns();
-  renderWeekCarousel();
-  renderMatchups();
-  renderPicksSummary();
-  renderStandings();
-  renderMatrix();
-  renderScoreManager();
+
+  const currentUser = getCurrentUser();
+
+  if (currentUser) {
+    if (elements.landingView) elements.landingView.style.display = 'none';
+    if (elements.appWorkspace) elements.appWorkspace.style.display = 'block';
+
+    renderLeagueDropdown();
+    renderPlayerDropdowns();
+    renderWeekCarousel();
+    renderMatchups();
+    renderPicksSummary();
+    renderStandings();
+    renderMatrix();
+    renderScoreManager();
+  } else {
+    if (elements.landingView) elements.landingView.style.display = 'block';
+    if (elements.appWorkspace) elements.appWorkspace.style.display = 'none';
+
+    renderLandingScores();
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -945,7 +1027,45 @@ function setupEventListeners() {
     elements.modalAuth?.classList.add('active');
   });
 
+  elements.btnLandingSignIn?.addEventListener('click', () => {
+    if (elements.formLogin) elements.formLogin.style.display = 'block';
+    if (elements.formRegister) elements.formRegister.style.display = 'none';
+    elements.tabAuthLogin?.classList.add('active');
+    elements.tabAuthRegister?.classList.remove('active');
+    elements.modalAuth?.classList.add('active');
+  });
+
   elements.btnRegister?.addEventListener('click', () => {
+    if (elements.formLogin) elements.formLogin.style.display = 'none';
+    if (elements.formRegister) elements.formRegister.style.display = 'block';
+    elements.tabAuthRegister?.classList.add('active');
+    elements.tabAuthLogin?.classList.remove('active');
+    elements.modalAuth?.classList.add('active');
+  });
+
+  elements.btnLandingRegister?.addEventListener('click', () => {
+    if (elements.formLogin) elements.formLogin.style.display = 'none';
+    if (elements.formRegister) elements.formRegister.style.display = 'block';
+    elements.tabAuthRegister?.classList.add('active');
+    elements.tabAuthLogin?.classList.remove('active');
+    elements.modalAuth?.classList.add('active');
+  });
+
+  elements.btnLandingLiveSync?.addEventListener('click', async () => {
+    showToast(`Fetching live 2026 NFL scores for Week ${state.currentWeek}...`);
+    if (elements.btnLandingLiveSync) elements.btnLandingLiveSync.disabled = true;
+    const res = await fetchLiveNflScores(state.currentWeek, 2026);
+    if (elements.btnLandingLiveSync) elements.btnLandingLiveSync.disabled = false;
+
+    if (res.success && res.games.length > 0) {
+      state.league.schedule = mergeLiveGamesIntoSchedule(state.league.schedule, state.currentWeek, res.games);
+      saveLeagueData(state.league);
+      renderLandingScores();
+      showToast(`Synced ${res.games.length} real NFL scores!`);
+    } else {
+      showToast(`Could not fetch live scores: ${res.error || 'No games found'}`, 'error');
+    }
+  });
     if (elements.formLogin) elements.formLogin.style.display = 'none';
     if (elements.formRegister) elements.formRegister.style.display = 'block';
     elements.tabAuthRegister?.classList.add('active');
