@@ -1171,14 +1171,14 @@ function setupEventListeners() {
 
   elements.formLogin?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const u = document.getElementById('loginUsername').value;
-    const p = document.getElementById('loginPassword').value;
+    const uInput = document.getElementById('loginUsername');
+    const pInput = document.getElementById('loginPassword');
+    const u = uInput ? uInput.value : '';
+    const p = pInput ? pInput.value : '';
     
     let res = await loginUser(u, p);
 
-    // If user account not found locally, fetch latest accounts from Cloud DB!
     if (!res.success && res.error === 'User account not found.') {
-      showToast('Checking Cloud Database for user account...');
       const cloudAccounts = await fetchAccountsFromCloud();
       if (cloudAccounts && Array.isArray(cloudAccounts)) {
         mergeAccountsFromSync(cloudAccounts);
@@ -1187,7 +1187,9 @@ function setupEventListeners() {
     }
 
     if (res.success) {
-      elements.modalAuth?.classList.remove('active');
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      if (uInput) uInput.value = '';
+      if (pInput) pInput.value = '';
       renderAll();
       showToast(`Welcome back, ${res.user.name}!`);
     } else {
@@ -1197,14 +1199,21 @@ function setupEventListeners() {
 
   elements.formRegister?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('regName').value;
-    const u = document.getElementById('regUsername').value;
-    const p = document.getElementById('regPassword').value;
+    const nameInput = document.getElementById('regName');
+    const uInput = document.getElementById('regUsername');
+    const pInput = document.getElementById('regPassword');
+    const name = nameInput ? nameInput.value : '';
+    const u = uInput ? uInput.value : '';
+    const p = pInput ? pInput.value : '';
     const avatar = state.selectedRegAvatar || '🏈';
+
     const res = await registerUser(name, u, p, avatar);
     if (res.success) {
       syncAccountsToCloud(getAccounts());
-      elements.modalAuth?.classList.remove('active');
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      if (nameInput) nameInput.value = '';
+      if (uInput) uInput.value = '';
+      if (pInput) pInput.value = '';
       renderAll();
       showToast(`Account created! Welcome, ${res.user.name}!`);
     } else {
