@@ -328,7 +328,14 @@ export function importLeagueJson(jsonString) {
   }
 }
 
-export async function deleteLeague(leagueId) {
+export async function deleteLeague(leagueId, requestingUser = null) {
+  const user = requestingUser || (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('nfl_pickem_session_v2') || '{}') : null);
+  const isMaster = user && (user.username === 'master');
+
+  if (!isMaster) {
+    return { success: false, error: 'Only the single Master account (master) can delete leagues.' };
+  }
+
   const leaguesMap = getAllLeagues();
   if (!leaguesMap[leagueId]) {
     return { success: false, error: 'League not found.' };

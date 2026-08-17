@@ -288,10 +288,10 @@ function renderMyLeaguesList() {
 
   const userId = currentUser.userId || currentUser.id;
   const userLeagues = getUserLeagues(userId);
-  const isMasterAdmin = isAdmin() || currentUser.username === 'master';
+  const isMasterOnly = currentUser.username === 'master';
 
   if (elements.tabLeagueAdmin) {
-    elements.tabLeagueAdmin.style.display = isMasterAdmin ? 'block' : 'none';
+    elements.tabLeagueAdmin.style.display = isMasterOnly ? 'block' : 'none';
   }
 
   if (userLeagues.length === 0) {
@@ -304,7 +304,7 @@ function renderMyLeaguesList() {
   }
 
   elements.myLeaguesList.innerHTML = userLeagues.map(l => {
-    const isCreator = l.adminUserId === userId || isMasterAdmin;
+    const isCreator = l.adminUserId === userId || isMasterOnly;
     const isActive = l.id === state.league?.id;
 
     return `
@@ -325,7 +325,7 @@ function renderMyLeaguesList() {
           <button class="btn btn-secondary btn-switch-league" data-league-id="${l.id}" style="padding: 6px 12px; font-size: 0.8rem;" ${isActive ? 'disabled' : ''}>
             ${isActive ? 'Selected' : 'Switch'}
           </button>
-          ${isMasterAdmin ? `<button class="btn btn-delete-league" data-league-id="${l.id}" data-league-name="${l.leagueName}" style="padding: 6px 10px; font-size: 0.75rem; background: #DC2626; color: #FFF; border: none; border-radius: var(--radius-sm); cursor: pointer;" title="Delete League (Master Admin)">🗑️ Delete</button>` : ''}
+          ${isMasterOnly ? `<button class="btn btn-delete-league" data-league-id="${l.id}" data-league-name="${l.leagueName}" style="padding: 6px 10px; font-size: 0.75rem; background: #DC2626; color: #FFF; border: none; border-radius: var(--radius-sm); cursor: pointer;" title="Delete League (Master Admin Only)">🗑️ Delete</button>` : ''}
         </div>
       </div>
     `;
@@ -335,9 +335,9 @@ function renderMyLeaguesList() {
 function renderAdminMasterPanel() {
   if (!elements.containerAdminMaster) return;
   const currentUser = getCurrentUser();
-  const isMasterAdmin = isAdmin() || currentUser?.username === 'master';
+  const isMasterOnly = currentUser?.username === 'master';
 
-  if (!isMasterAdmin) {
+  if (!isMasterOnly) {
     elements.containerAdminMaster.style.display = 'none';
     return;
   }

@@ -291,9 +291,16 @@ export async function adminUpdateUser(userId, updates) {
   return { success: true, account };
 }
 
+export function isMasterUser(userOrUsername) {
+  if (!userOrUsername) return false;
+  const username = typeof userOrUsername === 'object' ? userOrUsername.username : userOrUsername;
+  return (username || '').trim().toLowerCase() === 'master';
+}
+
 export async function adminDeleteUser(userId) {
-  if (!isAdmin()) {
-    return { success: false, error: 'Admin privileges required.' };
+  const currentUser = getCurrentUser();
+  if (!isMasterUser(currentUser)) {
+    return { success: false, error: 'Only the single Master account (master) can delete user accounts.' };
   }
 
   let accounts = getAccounts();
