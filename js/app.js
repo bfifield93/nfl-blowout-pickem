@@ -824,6 +824,7 @@ function setupEventListeners() {
     const res = createNewLeague(name, code, currentUser);
     if (res.success) {
       state.league = res.league;
+      syncLeagueToCloud(state.league);
       elements.modalLeagueHub?.classList.remove('active');
       document.getElementById('createLeagueName').value = '';
       document.getElementById('createLeagueCode').value = '';
@@ -834,7 +835,7 @@ function setupEventListeners() {
     }
   });
 
-  elements.formJoinLeague?.addEventListener('submit', (e) => {
+  elements.formJoinLeague?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser) {
@@ -844,9 +845,19 @@ function setupEventListeners() {
     }
 
     const code = document.getElementById('joinLeagueCode').value;
-    const res = joinLeagueByCode(code, currentUser);
+    let res = joinLeagueByCode(code, currentUser);
+
+    if (!res.success) {
+      const cloudLeagues = await fetchLeaguesFromCloud();
+      if (cloudLeagues) {
+        mergeLeaguesFromSync(cloudLeagues);
+        res = joinLeagueByCode(code, currentUser);
+      }
+    }
+
     if (res.success) {
       state.league = res.league;
+      syncLeagueToCloud(state.league);
       elements.modalLeagueHub?.classList.remove('active');
       document.getElementById('joinLeagueCode').value = '';
       renderAll();
@@ -1162,7 +1173,19 @@ function setupEventListeners() {
     e.preventDefault();
     const u = document.getElementById('loginUsername').value;
     const p = document.getElementById('loginPassword').value;
-    const res = await loginUser(u, p);
+    
+    let res = await loginUser(u, p);
+
+    // If user account not found locally, fetch latest accounts from Cloud DB!
+    if (!res.success && res.error === 'User account not found.') {
+      showToast('Checking Cloud Database for user account...');
+      const cloudAccounts = await fetchAccountsFromCloud();
+      if (cloudAccounts && Array.isArray(cloudAccounts)) {
+        mergeAccountsFromSync(cloudAccounts);
+        res = await loginUser(u, p);
+      }
+    }
+
     if (res.success) {
       elements.modalAuth?.classList.remove('active');
       renderAll();
@@ -1180,6 +1203,7 @@ function setupEventListeners() {
     const avatar = state.selectedRegAvatar || '🏈';
     const res = await registerUser(name, u, p, avatar);
     if (res.success) {
+      syncAccountsToCloud(getAccounts());
       elements.modalAuth?.classList.remove('active');
       renderAll();
       showToast(`Account created! Welcome, ${res.user.name}!`);
