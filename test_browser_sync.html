@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Browser Sync Test</title>
+</head>
+<body style="background: #121212; color: #fff; font-family: sans-serif; padding: 20px;">
+  <h2>Firebase Browser Sync Test</h2>
+  <button id="btnTestWrite">Test Write to Firebase</button>
+  <button id="btnTestRead">Test Read from Firebase</button>
+  <pre id="log" style="background: #000; padding: 15px; border-radius: 6px; margin-top: 20px;"></pre>
+
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += msg + '\n';
+      console.log(msg);
+    }
+
+    const DB_URL = 'https://nfl-blowout-pickem-default-rtdb.firebaseio.com';
+
+    document.getElementById('btnTestWrite').addEventListener('click', async () => {
+      log('Writing test account via fetch PUT...');
+      try {
+        const testData = [
+          { id: 'p_admin', username: 'admin', name: 'Commissioner Admin' },
+          { id: 'u_' + Date.now(), username: 'browser_user_' + Math.floor(Math.random()*1000), name: 'Browser User' }
+        ];
+        const res = await fetch(`${DB_URL}/accounts.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testData)
+        });
+        log('Write status: ' + res.status + ' ' + res.statusText);
+        const data = await res.json();
+        log('Write response: ' + JSON.stringify(data));
+      } catch (err) {
+        log('Write error: ' + err.message);
+      }
+    });
+
+    document.getElementById('btnTestRead').addEventListener('click', async () => {
+      log('Reading accounts via fetch GET...');
+      try {
+        const res = await fetch(`${DB_URL}/accounts.json`);
+        log('Read status: ' + res.status + ' ' + res.statusText);
+        const data = await res.json();
+        log('Read response: ' + JSON.stringify(data));
+      } catch (err) {
+        log('Read error: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

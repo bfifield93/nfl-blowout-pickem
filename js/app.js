@@ -1230,7 +1230,6 @@ function setupEventListeners() {
 
     const res = await registerUser(name, u, p, avatar);
     if (res.success) {
-      // 0ms Instant UI update and modal dismissal
       document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       if (nameInput) nameInput.value = '';
       if (uInput) uInput.value = '';
@@ -1238,8 +1237,8 @@ function setupEventListeners() {
       renderAll();
       showToast(`Account created! Welcome, ${res.user.name}!`);
 
-      // Non-blocking background push to Cloud DB
-      syncAccountsToCloud(getAccounts());
+      // Await syncAccountsToCloud to ensure HTTP REST push executes immediately
+      await syncAccountsToCloud(getAccounts());
     } else {
       showToast(res.error, 'error');
     }

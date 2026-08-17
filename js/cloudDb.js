@@ -8,7 +8,7 @@
 const STORAGE_KEY_FIREBASE_CONFIG = 'nfl_pickem_firebase_config_v1';
 const BROADCAST_CHANNEL_NAME = 'nfl_blowout_pickem_broadcast_v1';
 
-// Default User Firebase Realtime Database Configuration
+// Official User Firebase Realtime Database Project Credentials
 const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyCmfNbIxHFJGUgpLQp_fuDkzO8LUCyMoQs",
   authDomain: "nfl-blowout-pickem.firebaseapp.com",
@@ -26,8 +26,11 @@ let broadcastChannel = null;
 let isCloudConnected = false;
 
 function getCleanDatabaseUrl() {
-  const config = getSavedFirebaseConfig();
-  const rawUrl = (config && config.databaseURL) ? config.databaseURL : DEFAULT_FIREBASE_CONFIG.databaseURL;
+  const saved = getSavedFirebaseConfig();
+  let rawUrl = DEFAULT_FIREBASE_CONFIG.databaseURL;
+  if (saved && saved.databaseURL && saved.databaseURL.includes('firebaseio.com')) {
+    rawUrl = saved.databaseURL;
+  }
   return rawUrl.replace(/\/+$/, '');
 }
 
@@ -43,7 +46,7 @@ export function initBroadcastSync(onSyncCallback) {
       };
     }
   } catch (err) {
-    console.warn('BroadcastChannel not supported:', err);
+    console.warn('BroadcastChannel notice:', err);
   }
 }
 
@@ -63,7 +66,7 @@ export function getSavedFirebaseConfig() {
     const raw = localStorage.getItem(STORAGE_KEY_FIREBASE_CONFIG);
     if (!raw) return DEFAULT_FIREBASE_CONFIG;
     const parsed = JSON.parse(raw);
-    if (!parsed || !parsed.databaseURL || !parsed.apiKey) {
+    if (!parsed || !parsed.databaseURL || !parsed.apiKey || !parsed.databaseURL.includes('firebaseio.com')) {
       return DEFAULT_FIREBASE_CONFIG;
     }
     return parsed;
