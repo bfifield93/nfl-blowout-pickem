@@ -130,7 +130,7 @@ export async function saveLeagueData(leagueData) {
   }
 }
 
-export async function createNewLeague(name, joinCode, creatorUser) {
+export function createNewLeague(name, joinCode, creatorUser) {
   const cleanName = (name || '').trim();
   let cleanCode = (joinCode || '').trim().toUpperCase();
 
@@ -141,17 +141,6 @@ export async function createNewLeague(name, joinCode, creatorUser) {
   // If join code is missing or short, auto-generate one
   if (!cleanCode || cleanCode.length < 3) {
     cleanCode = `${cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, 'LEAGUE')}${Math.floor(100 + Math.random() * 900)}`;
-  }
-
-  // Pre-sync check from Firebase Database
-  try {
-    const cloudRes = await fetch(FIREBASE_REST_LEAGUES_URL);
-    if (cloudRes.ok) {
-      const cloudLeagues = await cloudRes.json();
-      if (cloudLeagues) mergeLeaguesFromSync(cloudLeagues);
-    }
-  } catch (err) {
-    console.warn('Pre-create league cloud fetch notice:', err);
   }
 
   const leaguesMap = getAllLeagues();
@@ -190,17 +179,12 @@ export async function createNewLeague(name, joinCode, creatorUser) {
   saveAllLeagues(leaguesMap);
   setActiveLeagueId(newLeagueId);
 
-  // Direct REST PUT to Firebase Realtime Database
-  try {
-    const putRes = await fetch(`${FIREBASE_REST_BASE_URL}/${newLeagueId}.json`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newLeague)
-    });
-    console.log('⚡ Direct REST league creation sync status:', putRes.status);
-  } catch (err) {
-    console.error('Direct REST league create error:', err);
-  }
+  // Non-blocking background push to Firebase Realtime Database
+  fetch(`${FIREBASE_REST_BASE_URL}/${newLeagueId}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newLeague)
+  }).catch(err => console.warn('Background league push notice:', err));
 
   return { success: true, league: newLeague };
 }

@@ -178,23 +178,22 @@ function getActivePlayer() {
 }
 
 function syncAccountsWithPlayers() {
+  if (!state.league || !state.league.players) return;
   const accounts = getAccounts();
   const players = state.league.players;
 
-  accounts.forEach(acc => {
-    let player = players.find(p => p.id === acc.id);
-    if (!player) {
-      player = { id: acc.id, name: acc.name, avatar: acc.avatar, picks: {} };
-      players.push(player);
-    } else {
-      player.name = acc.name;
-      player.avatar = acc.avatar;
+  players.forEach(player => {
+    const acc = accounts.find(a => (a.id === player.id || a.id === player.userId));
+    if (acc) {
+      if (acc.name) player.name = acc.name;
+      if (acc.avatar) player.avatar = acc.avatar;
     }
   });
 
   const currentUser = getCurrentUser();
-  if (currentUser && !isAdmin()) {
-    state.league.activePlayerId = currentUser.userId;
+  const uid = currentUser ? (currentUser.userId || currentUser.id) : null;
+  if (uid && players.some(p => (p.id === uid || p.userId === uid))) {
+    state.league.activePlayerId = uid;
   } else if (!state.league.activePlayerId && players.length > 0) {
     state.league.activePlayerId = players[0].id;
   }
@@ -856,7 +855,7 @@ function setupEventListeners() {
     renderMyLeaguesList();
   });
 
-  elements.formCreateLeague?.addEventListener('submit', async (e) => {
+  elements.formCreateLeague?.addEventListener('submit', (e) => {
     e.preventDefault();
     const currentUser = getCurrentUser();
     if (!currentUser) {
@@ -868,8 +867,7 @@ function setupEventListeners() {
     const name = document.getElementById('createLeagueName').value;
     const code = document.getElementById('createLeagueCode').value;
 
-    showToast('Creating league & logging to Firebase...');
-    const res = await createNewLeague(name, code, currentUser);
+    const res = createNewLeague(name, code, currentUser);
     if (res.success) {
       state.league = res.league;
       elements.modalLeagueHub?.classList.remove('active');
