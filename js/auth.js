@@ -6,13 +6,26 @@
 const STORAGE_KEY_ACCOUNTS = 'nfl_pickem_accounts_v2';
 const STORAGE_KEY_SESSION = 'nfl_pickem_session_v2';
 
-// Helper: Hash password string using SHA-256
+// Helper: Hash password string using SHA-256 (with fallback for HTTP non-secure contexts)
 async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      // Fallback below
+    }
+  }
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'h_' + Math.abs(hash).toString(16);
 }
 
 const DEFAULT_ACCOUNTS = [

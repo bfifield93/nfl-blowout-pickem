@@ -25,6 +25,12 @@ let firebaseDb = null;
 let broadcastChannel = null;
 let isCloudConnected = false;
 
+function getCleanDatabaseUrl() {
+  const config = getSavedFirebaseConfig();
+  const rawUrl = (config && config.databaseURL) ? config.databaseURL : DEFAULT_FIREBASE_CONFIG.databaseURL;
+  return rawUrl.replace(/\/+$/, '');
+}
+
 // 1. Multi-Browser BroadcastChannel Setup
 export function initBroadcastSync(onSyncCallback) {
   try {
@@ -101,15 +107,16 @@ export async function syncLeagueToCloud(leagueData) {
 
   broadcastDataUpdate('LEAGUE_UPDATE', leagueData);
 
-  const dbUrl = getSavedFirebaseConfig()?.databaseURL || DEFAULT_FIREBASE_CONFIG.databaseURL;
+  const dbUrl = getCleanDatabaseUrl();
 
   // 1. Direct REST PUT to Firebase Database
   try {
-    await fetch(`${dbUrl}/leagues/${leagueData.id}.json`, {
+    const res = await fetch(`${dbUrl}/leagues/${leagueData.id}.json`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(leagueData)
     });
+    console.log('⚡ League REST Sync status:', res.status);
   } catch (err) {
     console.error('Error in REST syncLeagueToCloud:', err);
   }
@@ -130,15 +137,16 @@ export async function syncAccountsToCloud(accounts) {
 
   broadcastDataUpdate('ACCOUNTS_UPDATE', accounts);
 
-  const dbUrl = getSavedFirebaseConfig()?.databaseURL || DEFAULT_FIREBASE_CONFIG.databaseURL;
+  const dbUrl = getCleanDatabaseUrl();
 
   // 1. Direct REST PUT to Firebase Database
   try {
-    await fetch(`${dbUrl}/accounts.json`, {
+    const res = await fetch(`${dbUrl}/accounts.json`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(accounts)
     });
+    console.log('⚡ Accounts REST Sync status:', res.status);
   } catch (err) {
     console.error('Error in REST syncAccountsToCloud:', err);
   }
@@ -185,7 +193,7 @@ export function isCloudActive() {
 }
 
 export async function fetchAccountsFromCloud() {
-  const dbUrl = getSavedFirebaseConfig()?.databaseURL || DEFAULT_FIREBASE_CONFIG.databaseURL;
+  const dbUrl = getCleanDatabaseUrl();
 
   // 1. Direct REST GET from Firebase Database
   try {
@@ -214,7 +222,7 @@ export async function fetchAccountsFromCloud() {
 }
 
 export async function fetchLeaguesFromCloud() {
-  const dbUrl = getSavedFirebaseConfig()?.databaseURL || DEFAULT_FIREBASE_CONFIG.databaseURL;
+  const dbUrl = getCleanDatabaseUrl();
 
   // 1. Direct REST GET from Firebase Database
   try {
