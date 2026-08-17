@@ -175,6 +175,11 @@ function renderAuthHeader() {
     if (elements.btnSignIn) elements.btnSignIn.style.display = 'none';
     if (elements.btnRegister) elements.btnRegister.style.display = 'none';
     if (elements.btnSignOut) elements.btnSignOut.style.display = 'inline-flex';
+    if (elements.leagueSelectContainer) elements.leagueSelectContainer.style.display = 'flex';
+    if (elements.btnOpenLeagueHub) elements.btnOpenLeagueHub.style.display = 'inline-flex';
+    if (elements.btnLiveSync) elements.btnLiveSync.style.display = 'inline-flex';
+    if (elements.btnExportImport) elements.btnExportImport.style.display = 'inline-flex';
+    if (elements.btnRules) elements.btnRules.style.display = 'inline-flex';
 
     if (elements.btnAdminPanel) {
       elements.btnAdminPanel.style.display = currentUser.role === 'ADMIN' ? 'inline-flex' : 'none';
@@ -183,8 +188,14 @@ function renderAuthHeader() {
     if (elements.userProfileBadge) elements.userProfileBadge.style.display = 'none';
     if (elements.btnSignIn) elements.btnSignIn.style.display = 'inline-flex';
     if (elements.btnRegister) elements.btnRegister.style.display = 'inline-flex';
+    if (elements.btnRules) elements.btnRules.style.display = 'inline-flex';
+
     if (elements.btnSignOut) elements.btnSignOut.style.display = 'none';
     if (elements.btnAdminPanel) elements.btnAdminPanel.style.display = 'none';
+    if (elements.leagueSelectContainer) elements.leagueSelectContainer.style.display = 'none';
+    if (elements.btnOpenLeagueHub) elements.btnOpenLeagueHub.style.display = 'none';
+    if (elements.btnLiveSync) elements.btnLiveSync.style.display = 'none';
+    if (elements.btnExportImport) elements.btnExportImport.style.display = 'none';
   }
 }
 
