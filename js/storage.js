@@ -89,16 +89,22 @@ export function setActiveLeagueId(leagueId) {
   localStorage.setItem(STORAGE_KEY_ACTIVE_LEAGUE_ID, leagueId);
 }
 
-export function loadLeagueData() {
-  const activeId = getActiveLeagueId();
-  const leaguesMap = getAllLeagues();
-  const activeLeague = leaguesMap[activeId] || DEFAULT_LEAGUE_DATA;
-
-  if (!activeLeague.schedule || activeLeague.schedule.length === 0) {
-    activeLeague.schedule = DEFAULT_SCHEDULE;
+export function loadLeagueData(userId = null, isAdminUser = false) {
+  const userLeagues = getUserLeagues(userId, isAdminUser);
+  if (userLeagues.length === 0) {
+    return DEFAULT_LEAGUE_DATA;
   }
 
-  return activeLeague;
+  const activeId = getActiveLeagueId();
+  const matchingActive = userLeagues.find(l => l.id === activeId);
+
+  if (matchingActive) {
+    return matchingActive;
+  }
+
+  const firstUserLeague = userLeagues[0];
+  setActiveLeagueId(firstUserLeague.id);
+  return firstUserLeague;
 }
 
 export async function saveLeagueData(leagueData) {
@@ -246,13 +252,23 @@ export async function joinLeagueByCode(joinCode, user) {
   return { success: true, league };
 }
 
-export function getUserLeagues(userId) {
+export function getUserLeagues(userId, isAdminUser = false) {
   const leaguesMap = getAllLeagues();
   const allLeagues = Object.values(leaguesMap);
-  if (!userId) return allLeagues;
+
+  if (!userId) {
+    return [];
+  }
+
+  if (isAdminUser) {
+    return allLeagues;
+  }
 
   return allLeagues.filter(l => {
-    return l.adminUserId === userId || (l.players && l.players.some(p => p.id === userId));
+    if (!l) return false;
+    const isCreator = (l.adminUserId && (l.adminUserId === userId));
+    const isMember = (l.players && Array.isArray(l.players) && l.players.some(p => (p.id === userId || p.userId === userId)));
+    return isCreator || isMember;
   });
 }
 

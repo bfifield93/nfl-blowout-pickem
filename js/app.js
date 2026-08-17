@@ -247,21 +247,42 @@ function renderAuthHeader() {
 function renderLeagueDropdown() {
   if (!elements.leagueDropdown) return;
   const currentUser = getCurrentUser();
-  const userLeagues = getUserLeagues(currentUser?.userId);
+  if (!currentUser) {
+    elements.leagueDropdown.innerHTML = '';
+    return;
+  }
+
+  const userId = currentUser.userId || currentUser.id;
+  const userLeagues = getUserLeagues(userId, isAdmin());
 
   elements.leagueDropdown.innerHTML = userLeagues.map(l => {
-    return `<option value="${l.id}" ${l.id === state.league.id ? 'selected' : ''}>🏆 ${l.leagueName}</option>`;
+    return `<option value="${l.id}" ${l.id === state.league?.id ? 'selected' : ''}>🏆 ${l.leagueName}</option>`;
   }).join('');
 }
 
 function renderMyLeaguesList() {
   if (!elements.myLeaguesList) return;
   const currentUser = getCurrentUser();
-  const userLeagues = getUserLeagues(currentUser?.userId);
+  if (!currentUser) {
+    elements.myLeaguesList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Please sign in to view your leagues.</div>';
+    return;
+  }
+
+  const userId = currentUser.userId || currentUser.id;
+  const userLeagues = getUserLeagues(userId, isAdmin());
+
+  if (userLeagues.length === 0) {
+    elements.myLeaguesList.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: var(--text-muted); background: rgba(0,0,0,0.3); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
+        You have not created or joined any leagues yet.<br>Click <strong>Create League</strong> or <strong>Join League</strong> above!
+      </div>
+    `;
+    return;
+  }
 
   elements.myLeaguesList.innerHTML = userLeagues.map(l => {
-    const isCreator = l.adminUserId === currentUser?.userId || isAdmin();
-    const isActive = l.id === state.league.id;
+    const isCreator = l.adminUserId === userId || isAdmin();
+    const isActive = l.id === state.league?.id;
 
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
@@ -362,6 +383,14 @@ function renderAll() {
   if (currentUser) {
     if (elements.landingView) elements.landingView.style.display = 'none';
     if (elements.appWorkspace) elements.appWorkspace.style.display = 'block';
+
+    const userId = currentUser.userId || currentUser.id;
+    const userLeagues = getUserLeagues(userId, isAdmin());
+
+    if (userLeagues.length > 0 && (!state.league || !userLeagues.some(l => l.id === state.league.id))) {
+      state.league = userLeagues[0];
+      setActiveLeagueId(state.league.id);
+    }
 
     renderLeagueDropdown();
     renderPlayerDropdowns();
