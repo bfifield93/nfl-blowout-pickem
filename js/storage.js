@@ -209,10 +209,14 @@ export async function joinLeagueByCode(joinCode, user) {
   }
 
   const leaguesMap = getAllLeagues();
-  const league = Object.values(leaguesMap).find(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode);
+  let league = Object.values(leaguesMap).find(l => l.joinCode && l.joinCode.toUpperCase() === cleanCode);
 
   if (!league) {
-    return { success: false, error: 'League not found with that Join Code. Please verify code.' };
+    league = Object.values(leaguesMap).find(l => l.joinCode && l.joinCode.toUpperCase().startsWith(cleanCode));
+  }
+
+  if (!league) {
+    return { success: false, error: 'League not found with that Join Code. Please verify code with Commissioner.' };
   }
 
   const userId = user ? (user.userId || user.id) : 'p_user';

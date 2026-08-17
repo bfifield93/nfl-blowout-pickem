@@ -143,6 +143,23 @@
 
     <!-- Interactive Pick'em App Workspace (Unlocked when signed in) -->
     <div id="appWorkspace" style="display: none;">
+      <!-- Active League Info Banner with Join Code & Copy Button -->
+      <div id="leagueInfoBanner" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(17,24,39,0.9), rgba(30,41,59,0.9)); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🏆</span>
+          <div>
+            <h3 id="currentLeagueNameText" style="font-size: 1.1rem; font-weight: 900; color: #FFF; margin: 0;">Blowout Champions League 2026</h3>
+            <span id="currentLeagueRoleText" style="font-size: 0.75rem; color: var(--color-green); font-weight: 800;">MEMBER</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid rgba(255,184,28,0.3);">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-gold);">🔑 Invite Join Code:</span>
+          <code id="currentLeagueJoinCodeText" style="font-size: 1rem; font-weight: 900; color: #FFF; letter-spacing: 1px;">BLOWOUT2026</code>
+          <button id="btnCopyJoinCode" type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" title="Copy Join Code to Clipboard">📋 Copy Code</button>
+        </div>
+      </div>
+
       <!-- Navigation Tabs -->
       <nav class="tabs-nav">
         <button class="tab-btn active" data-tab="tabPicks">🏈 Weekly Picks</button>

@@ -243,6 +243,24 @@ function renderAuthHeader() {
   }
 }
 
+function renderLeagueInfoBanner() {
+  if (!state.league) return;
+  const currentUser = getCurrentUser();
+  const uid = currentUser ? (currentUser.userId || currentUser.id) : null;
+  const isCommissioner = isLeagueAdmin(state.league, uid) || isAdmin();
+
+  if (elements.currentLeagueNameText) {
+    elements.currentLeagueNameText.textContent = state.league.leagueName;
+  }
+  if (elements.currentLeagueRoleText) {
+    elements.currentLeagueRoleText.textContent = isCommissioner ? '👑 COMMISSIONER' : '🏈 LEAGUE MEMBER';
+    elements.currentLeagueRoleText.style.color = isCommissioner ? 'var(--color-gold)' : 'var(--color-green)';
+  }
+  if (elements.currentLeagueJoinCodeText) {
+    elements.currentLeagueJoinCodeText.textContent = state.league.joinCode || 'N/A';
+  }
+}
+
 function renderLeagueDropdown() {
   if (!elements.leagueDropdown) return;
   const currentUser = getCurrentUser();
@@ -291,14 +309,17 @@ function renderMyLeaguesList() {
             ${isActive ? '<span style="font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,255,135,0.15); color: var(--color-green); margin-left: 6px;">ACTIVE</span>' : ''}
           </div>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-            Invite Code: <strong style="color: var(--color-gold);">${l.joinCode}</strong> • Members: ${l.players?.length || 1}
+            Join Code: <strong style="color: var(--color-gold); font-size: 0.85rem;">${l.joinCode}</strong> • Members: ${l.players?.length || 1}
             ${isCreator ? ' • <span style="color: var(--color-green); font-weight: 800;">COMMISSIONER</span>' : ''}
           </div>
         </div>
 
-        <button class="btn btn-secondary btn-switch-league" data-league-id="${l.id}" style="padding: 6px 12px; font-size: 0.8rem;" ${isActive ? 'disabled' : ''}>
-          ${isActive ? 'Selected' : 'Switch'}
-        </button>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn btn-secondary btn-copy-league-code" data-code="${l.joinCode}" style="padding: 6px 10px; font-size: 0.75rem;">📋 Copy Code</button>
+          <button class="btn btn-secondary btn-switch-league" data-league-id="${l.id}" style="padding: 6px 12px; font-size: 0.8rem;" ${isActive ? 'disabled' : ''}>
+            ${isActive ? 'Selected' : 'Switch'}
+          </button>
+        </div>
       </div>
     `;
   }).join('');
@@ -391,6 +412,7 @@ function renderAll() {
       setActiveLeagueId(state.league.id);
     }
 
+    renderLeagueInfoBanner();
     renderLeagueDropdown();
     renderPlayerDropdowns();
     renderWeekCarousel();
@@ -819,7 +841,31 @@ function setupEventListeners() {
     }
   });
 
+  elements.btnCopyJoinCode?.addEventListener('click', () => {
+    const code = state.league?.joinCode;
+    if (code) {
+      navigator.clipboard.writeText(code).then(() => {
+        showToast(`📋 Join Code "${code}" copied to clipboard! Share with friends.`);
+      }).catch(() => {
+        showToast(`Invite Join Code: ${code}`);
+      });
+    }
+  });
+
   elements.myLeaguesList?.addEventListener('click', (e) => {
+    const copyBtn = e.target.closest('.btn-copy-league-code');
+    if (copyBtn) {
+      const code = copyBtn.dataset.code;
+      if (code) {
+        navigator.clipboard.writeText(code).then(() => {
+          showToast(`📋 Join Code "${code}" copied!`);
+        }).catch(() => {
+          showToast(`Join Code: ${code}`);
+        });
+        return;
+      }
+    }
+
     const btn = e.target.closest('.btn-switch-league');
     if (btn) {
       const leagueId = btn.dataset.leagueId;
