@@ -1199,7 +1199,7 @@ function setupEventListeners() {
 
     // 2. If account not found locally, fetch latest accounts from Cloud DB and retry
     if (!res.success && res.error === 'User account not found.') {
-      showToast('Checking Cloud Database for account...');
+      showToast('Checking Firebase Cloud Database for account...');
       const cloudAccounts = await fetchAccountsFromCloud();
       if (cloudAccounts && Array.isArray(cloudAccounts)) {
         mergeAccountsFromSync(cloudAccounts);
@@ -1235,10 +1235,13 @@ function setupEventListeners() {
       if (uInput) uInput.value = '';
       if (pInput) pInput.value = '';
       renderAll();
-      showToast(`Account created! Welcome, ${res.user.name}!`);
 
-      // Await syncAccountsToCloud to ensure HTTP REST push executes immediately
-      await syncAccountsToCloud(getAccounts());
+      const syncRes = await syncAccountsToCloud(getAccounts());
+      if (syncRes && syncRes.success) {
+        showToast(`🎉 Account created & synced to Firebase! Welcome, ${res.user.name}!`);
+      } else {
+        showToast(`Account created! Welcome, ${res.user.name}!`);
+      }
     } else {
       showToast(res.error, 'error');
     }

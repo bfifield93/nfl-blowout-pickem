@@ -136,11 +136,13 @@ export async function syncLeagueToCloud(leagueData) {
 }
 
 export async function syncAccountsToCloud(accounts) {
-  if (!accounts) return;
+  if (!accounts) return { success: false, error: 'No accounts' };
 
   broadcastDataUpdate('ACCOUNTS_UPDATE', accounts);
 
   const dbUrl = getCleanDatabaseUrl();
+  let restSuccess = false;
+  let restStatus = 0;
 
   // 1. Direct REST PUT to Firebase Database
   try {
@@ -149,7 +151,13 @@ export async function syncAccountsToCloud(accounts) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(accounts)
     });
-    console.log('⚡ Accounts REST Sync status:', res.status);
+    restStatus = res.status;
+    if (res.ok) {
+      restSuccess = true;
+      console.log('⚡ Accounts REST Sync status 200 OK:', accounts.length, 'accounts');
+    } else {
+      console.warn('⚡ Accounts REST Sync HTTP status:', res.status);
+    }
   } catch (err) {
     console.error('Error in REST syncAccountsToCloud:', err);
   }
@@ -163,6 +171,8 @@ export async function syncAccountsToCloud(accounts) {
       console.warn('SDK accounts sync notice:', err);
     }
   }
+
+  return { success: restSuccess, status: restStatus, count: accounts.length };
 }
 
 export async function subscribeToRealtimeCloudUpdates(onLeaguesUpdate, onAccountsUpdate) {
